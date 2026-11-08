@@ -1,3 +1,5 @@
 /target
 *.orig
 relatorio-nscope*.md
+__pycache__/
+.venv/

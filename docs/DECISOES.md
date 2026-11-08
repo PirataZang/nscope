@@ -18,5 +18,5 @@ Registro das escolhas feitas onde o prompt original deixava margem ou entrava em
 14. **Ruído declarado dos perfis = ruído calculado**, garantido por teste (o protótipo divergia em alguns).
 15. **`SIGTERM`/`SIGKILL` não são tratados** (sem crate de sinais, sem `unsafe`). `q` e `Ctrl+C` (que em modo raw chega como tecla) fazem a limpeza completa. Documentado em SECURITY.md.
 16. **MSRV = 1.88** (exigência de `ratatui-widgets`). Para *rodar os testes* é preciso 1.89 (dependência de desenvolvimento do `insta`).
-17. **GIF de demonstração:** `docs/demo.tape` (vhs) está pronto, mas o GIF não foi gerado neste ambiente; o README usa capturas de texto reais dos snapshots.
+17. **Vídeos/GIFs do README:** gerados por `docs/demo/gerar.py` (dev-only, Python + pyte + pillow + ffmpeg, fora do binário Rust): o nscope roda de verdade num pseudoterminal com o nmap instalado, e os quadros são renderizados com cursor, cliques, teclas e zoom. O alvo é só `scanme.nmap.org`; o `8.8.8.8` do vídeo de segurança é digitado e a confirmação é cancelada. Substitui o `demo.tape` (vhs), que foi removido.
 18. **Pipeline de release não executado localmente.** Os workflows usam SHAs reais de ações, mas só rodam no GitHub.

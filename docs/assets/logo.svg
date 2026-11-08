@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="nscope">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#12345c"/>
+      <stop offset="1" stop-color="#081426"/>
+    </linearGradient>
+    <radialGradient id="sweep" cx="128" cy="128" r="78" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7dd3fc" stop-opacity="0"/>
+      <stop offset="1" stop-color="#7dd3fc" stop-opacity=".55"/>
+    </radialGradient>
+  </defs>
+  <rect width="256" height="256" rx="58" fill="url(#bg)"/>
+  <rect x="2" y="2" width="252" height="252" rx="56" fill="none" stroke="#38bdf8" stroke-opacity=".35" stroke-width="3"/>
+  <path d="M128 128 L128 50 A78 78 0 0 1 196 89 Z" fill="url(#sweep)"/>
+  <circle cx="128" cy="128" r="78" fill="none" stroke="#7dd3fc" stroke-width="8"/>
+  <circle cx="128" cy="128" r="48" fill="none" stroke="#38bdf8" stroke-width="5" stroke-opacity=".8"/>
+  <g stroke="#bae6fd" stroke-width="8" stroke-linecap="round">
+    <path d="M128 26V60M128 196V230M26 128H60M196 128H230"/>
+  </g>
+  <circle cx="128" cy="128" r="16" fill="#e0f2fe"/>
+  <circle cx="171" cy="84" r="8" fill="#bae6fd"/>
+  <circle cx="171" cy="84" r="15" fill="none" stroke="#bae6fd" stroke-opacity=".5" stroke-width="3"/>
+  <circle cx="90" cy="160" r="6" fill="#7dd3fc"/>
+</svg>

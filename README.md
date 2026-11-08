@@ -1,6 +1,26 @@
-# nscope
+<div align="center">
 
-**O nmap sem decorar flags.** Uma interface de terminal (TUI) em português, no estilo lazygit/lazydocker, que monta o comando do nmap, **explica cada pedaço**, avisa dos riscos **antes** de executar, acompanha o scan e mostra os resultados de forma navegável.
+<img src="docs/assets/banner.png" alt="nscope: o nmap sem decorar flags" width="720">
+
+<br>
+
+![Rust](https://img.shields.io/badge/Rust-1.88%2B-7dd3fc?logo=rust&logoColor=white&labelColor=0f2a4a)
+![Licença](https://img.shields.io/badge/licen%C3%A7a-MIT-38bdf8?labelColor=0f2a4a)
+![unsafe](https://img.shields.io/badge/unsafe-proibido-7dd3fc?labelColor=0f2a4a)
+![Idioma](https://img.shields.io/badge/interface-pt--BR-38bdf8?labelColor=0f2a4a)
+![Telemetria](https://img.shields.io/badge/telemetria-zero-7dd3fc?labelColor=0f2a4a)
+![Plataformas](https://img.shields.io/badge/Linux%20%C2%B7%20macOS%20%C2%B7%20Windows-0ea5e9?labelColor=0f2a4a)
+
+**Monta o comando do nmap, explica cada pedaço, avisa dos riscos antes de rodar e mostra o resultado de um jeito que dá para navegar.**
+Tudo no terminal, em português, no estilo lazygit.
+
+[🚀 Instalar](#-instalação) · [🎬 Ver em ação](#-veja-funcionando) · [🎹 Atalhos](#-atalhos) · [🔐 Segurança](#-segurança-modelo-de-ameaças-resumido) · [🤝 Contribuir](#-como-contribuir)
+
+<img src="docs/media/fluxo.gif" alt="nscope escaneando scanme.nmap.org: alvo, perfil, comando explicado, execução e resultados" width="800">
+
+<sub>Gravado de verdade: o nscope executando o nmap contra <code>scanme.nmap.org</code>, o alvo de testes do projeto Nmap. <a href="docs/media/fluxo.mp4">▶ Versão em MP4 (1080p, 30 fps)</a></sub>
+
+</div>
 
 > ⚠️ **Aviso legal:** use o nscope (e o nmap) apenas em sistemas que você possui ou para os quais tem **autorização por escrito**. Escanear sem permissão pode ser crime. Para praticar, use `scanme.nmap.org` (o projeto Nmap permite, com moderação) ou um laboratório seu.
 
@@ -8,16 +28,34 @@ O nscope **não reimplementa o nmap**: ele executa o `nmap` instalado no seu sis
 
 > 🖥️ É um programa **de terminal**: abra um terminal (Windows Terminal, GNOME Terminal, iTerm2...) e rode `nscope`. Precisa de pelo menos **80×24**.
 
-## Por que usar
+## ✨ Por que usar
 
-- **Todo comando é explicado**: para cada opção, o que faz, quando usar e o cuidado; cada pedaço do comando final tem uma explicação ao lado.
-- **Comando sempre visível** em uma barra fixa, colorido, com cópia por tecla (`y`).
-- **Segurança na frente**: avisos de privilégio, conflito, escopo e risco aparecem antes de executar; alvo fora de rede privada exige confirmação explícita (padrão *Não*).
-- **Cobertura total do nmap**: ~110 opções em telas próprias + campo livre para qualquer flag nova ou rara. Veja [docs/CATALOGO.md](docs/CATALOGO.md).
-- **Teclado primeiro**, mouse opcional. Funciona com `NO_COLOR` e em terminais de 16 cores.
-- **Honesto**: sem o nmap instalado, a interface funciona para montar comandos e diz como instalar. Nunca inventa resultado.
+| | |
+|---|---|
+| 🧠 **Todo comando é explicado** | Para cada opção: o que faz, quando usar e o cuidado. Cada pedaço do comando final tem uma explicação ao lado. |
+| 🎨 **Comando sempre visível** | Barra fixa e colorida, com cópia por tecla (`y`). |
+| 🛡️ **Segurança na frente** | Avisos de privilégio, conflito, escopo e risco **antes** de executar. Alvo fora de rede privada exige confirmação (padrão *Não*). |
+| 🧰 **Cobertura total** | ~110 opções em telas próprias, 16 perfis prontos e um campo livre para qualquer flag nova ou rara. Veja o [catálogo](docs/CATALOGO.md). |
+| ⌨️ **Teclado primeiro, mouse opcional** | Funciona com `NO_COLOR` e em terminais de 16 cores. |
+| 🔎 **Busca global** | `/` encontra qualquer opção por nome, flag ou descrição e salta até ela. |
+| 🧾 **Relatório em Markdown** | `s` salva o resultado, sem sobrescrever arquivos existentes. |
+| 🤝 **Honesto** | Sem o nmap instalado, a interface monta comandos e diz como instalar. Nunca inventa resultado. |
 
-## Instalação
+## 🧭 Como funciona
+
+```mermaid
+flowchart LR
+    A["🎯 Alvo"] --> B["📦 Perfil ou<br/>⚙️ Configurar"]
+    B --> C["🔍 Comando<br/>explicado + avisos"]
+    C -->|"r"| D["▶️ Execução<br/>progresso ao vivo"]
+    D --> E["📊 Resultados<br/>hosts · portas · riscos"]
+    E -->|"s"| F["📝 Relatório .md"]
+    C -.->|"y"| G["📋 Copiar comando"]
+```
+
+> Por baixo: o nscope chama `nmap` com uma **lista de argumentos** (nunca por um shell), lê o XML (`-oX`) que o próprio nmap gera e desenha na tela. Nada além disso.
+
+## 🚀 Instalação
 
 Você precisa de **dois programas**: o **nmap** e o **nscope**.
 
@@ -101,7 +139,7 @@ Várias técnicas (SYN `-sS`, UDP `-sU`, detecção de SO `-O`...) exigem admini
 - **Windows:** abra o *Windows Terminal* **como administrador** e rode `nscope`.
 - Se o seu `nmap` tem *capabilities* (Linux), use *Configurar → Avançado → Modo de privilégios → Assumir administrador*.
 
-## Uso em 4 passos
+## 🧪 Uso em 4 passos
 
 1. **Alvo (`1`)**: digite o que escanear (um IP, um nome, `192.168.0.0/24`...). A validação é ao vivo.
 2. **Perfis (`2`) ou Configurar (`3`)**: aplique um perfil pronto (★ *Padrão com serviços* é o recomendado) ou ajuste opção por opção. A tela da direita explica tudo.
@@ -110,7 +148,7 @@ Várias técnicas (SYN `-sS`, UDP `-sU`, detecção de SO `-O`...) exigem admini
 
 Para abrir um XML que você já tem: `nscope --open scan.xml`. Para só imprimir um comando: `nscope --print-command --profile "Scan rápido" --target 192.0.2.10`.
 
-## Atalhos
+## 🎹 Atalhos
 
 | Tecla | Ação |
 |---|---|
@@ -130,9 +168,55 @@ Para abrir um XML que você já tem: `nscope --open scan.xml`. Para só imprimir
 Na edição de texto: `Enter` confirma, `Esc` cancela e restaura, o comando atualiza enquanto você digita.
 Mouse (opcional): clique em abas, sub-abas e linhas.
 
-## Capturas
+## 🎬 Veja funcionando
 
-Saídas reais da própria interface (80×24).
+Tudo abaixo foi **gravado do programa de verdade** (o nmap rodando contra `scanme.nmap.org`), com mouse, teclado e zoom nos pontos importantes. Cada vídeo tem versão MP4 em 1080p e 30 fps.
+
+### 1. Do alvo ao resultado em menos de um minuto
+
+Um scan de verdade contra `scanme.nmap.org`: alvo, perfil, comando explicado, execução e resultados. A espera do scan foi acelerada 3× no vídeo.
+
+<div align="center">
+<img src="docs/media/fluxo.gif" alt="Fluxo completo: alvo, perfil, comando, execução e resultados" width="800">
+
+<sub><a href="docs/media/fluxo.mp4">▶ Assistir em MP4 (1080p, 30 fps)</a></sub>
+</div>
+
+### 2. Mais de 110 opções, todas explicadas
+
+Cada opção diz **o que faz, quando usar e o cuidado**. O comando muda na hora, e a busca (`/`) acha qualquer opção por nome, flag ou descrição.
+
+<div align="center">
+<img src="docs/media/configurar.gif" alt="Configurar: opções explicadas, comando ao vivo e busca global" width="800">
+
+<sub><a href="docs/media/configurar.mp4">▶ Assistir em MP4 (1080p, 30 fps)</a></sub>
+</div>
+
+### 3. Segurança antes de executar
+
+Avisos de privilégio, conflitos e risco aparecem **antes** de rodar. Alvo fora da sua rede abre uma confirmação cujo padrão é **Não**. Neste vídeo o `8.8.8.8` só é digitado: a confirmação é cancelada e nada vai para a rede.
+
+<div align="center">
+<img src="docs/media/seguranca.gif" alt="Avisos e confirmação de autorização" width="800">
+
+<sub><a href="docs/media/seguranca.mp4">▶ Assistir em MP4 (1080p, 30 fps)</a></sub>
+</div>
+
+### 🖼️ Galeria
+
+<table>
+<tr>
+<td align="center"><img src="docs/media/tela-alvo.png" alt="Aba Alvo" width="420"><br><sub><b>1 · Alvo</b>: formatos aceitos e validação ao vivo</sub></td>
+<td align="center"><img src="docs/media/tela-perfis.png" alt="Aba Perfis" width="420"><br><sub><b>2 · Perfis</b>: 16 receitas prontas, com a visibilidade de cada uma</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="docs/media/tela-configurar.png" alt="Aba Configurar" width="420"><br><sub><b>3 · Configurar</b>: 9 sub-abas, uma ajuda por opção</sub></td>
+<td align="center"><img src="docs/media/tela-comando.png" alt="Aba Comando" width="420"><br><sub><b>4 · Comando</b>: cada pedaço explicado e os avisos</sub></td>
+</tr>
+</table>
+
+<details>
+<summary>📟 Prefere texto puro? Capturas reais da interface em 80×24</summary>
 
 **Configurar → Portas** (lista à esquerda, "O que isso faz" à direita):
 ```text
@@ -218,9 +302,11 @@ $ nmap -sV -oA relatorio scanme.nmap.org
  ↑↓ mover  ←→ painel  o só abertas  s salvar  Tab abas  / buscar  r executar
 ```
 
-> Quer um GIF? Com o [vhs](https://github.com/charmbracelet/vhs) instalado: `vhs docs/demo.tape`.
+</details>
 
-## Recursos
+> 🎞️ Os vídeos são gerados por [`docs/demo/gerar.py`](docs/demo/gerar.py), que controla o nscope num pseudoterminal e renderiza os quadros (cursor, cliques, zoom). Para refazer: `python3 -m venv .venv && .venv/bin/pip install pyte pillow` e depois `.venv/bin/python docs/demo/gerar.py` (precisa de `ffmpeg`, `nmap` e do `nscope` no PATH). A logo sai de [`docs/demo/logo.py`](docs/demo/logo.py).
+
+## 🧩 Recursos
 
 - 7 telas: Alvo · Perfis · Configurar (Descoberta · Técnica · Portas · Serviços e SO · Scripts · Tempo · Evasão · Saída · Avançado) · Comando · Execução · Resultados · Ajuda.
 - 16 perfis prontos (descobrir hosts, padrão com serviços, vulnerabilidades, discreto, UDP, firewall, web, SMB, IPv6, relatórios...).
@@ -230,7 +316,7 @@ $ nmap -sV -oA relatorio scanme.nmap.org
 - Relatório Markdown (`s`), criado sem sobrescrever arquivos existentes.
 - Terminal sempre restaurado (também em pânico e `Ctrl+C`); temporários sempre removidos.
 
-## Segurança (modelo de ameaças resumido)
+## 🔐 Segurança (modelo de ameaças resumido)
 
 Detalhes e política de divulgação em [SECURITY.md](SECURITY.md).
 
@@ -241,7 +327,7 @@ Detalhes e política de divulgação em [SECURITY.md](SECURITY.md).
 - **Autorização**: confirmação explícita para alvos fora de redes privadas (padrão *Não*).
 - **Não protege**: o próprio nmap/NSE, a autorização legal, um sistema já comprometido, `SIGKILL`.
 
-## Dependências (todas justificadas)
+## 📦 Dependências (todas justificadas)
 
 | Crate | Por quê |
 |---|---|
@@ -251,7 +337,7 @@ Detalhes e política de divulgação em [SECURITY.md](SECURITY.md).
 | `unicode-width` | largura de colunas correta no campo de texto e nas tabelas |
 | `insta` *(dev)* | testes de snapshot das telas |
 
-## Desenvolvimento
+## 🔧 Desenvolvimento
 
 ```bash
 cargo fmt --check
@@ -262,7 +348,7 @@ cargo deny check && cargo audit       # licenças e vulnerabilidades
 
 Rust 1.88+ para compilar (1.89+ para rodar os testes, por causa do `insta`). Arquitetura em [docs/ARQUITETURA.md](docs/ARQUITETURA.md); decisões em [docs/DECISOES.md](docs/DECISOES.md).
 
-## Como contribuir
+## 🤝 Como contribuir
 
 1. Abra uma issue descrevendo a mudança (falhas de segurança: veja [SECURITY.md](SECURITY.md), **não** use issue pública).
 2. Faça o fork, crie um branch, rode os comandos de *Desenvolvimento* acima.
@@ -280,6 +366,6 @@ n(Tempo, "minrate", "--min-rate", "Taxa mínima (pacotes/s)", "Texto simples do 
 
 Rode `UPDATE_CATALOG=1 cargo test catalogo` para atualizar [docs/CATALOGO.md](docs/CATALOGO.md) e adicione regras em `src/nmap/analyze.rs` se a opção tiver conflitos. Um teste confere que **toda** opção do catálogo emite exatamente a sua flag.
 
-## Licença
+## 📄 Licença
 
 [MIT](LICENSE).
