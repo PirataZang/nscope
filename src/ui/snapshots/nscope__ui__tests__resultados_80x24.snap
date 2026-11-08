@@ -1,0 +1,28 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+ 3 hosts (2 ligados) · 14.5 s · nmap -sV -O --traceroute 192.0.2.0/24
+ ☐ só abertas (o) · s salva relatório Markdown
+┌ Hosts ─────────────────┐┌ Portas ◂ ──────────────────────────────────────────┐
+│● 192.0.2.10 serv… 2 ab.││PORTA    ESTADO         SERVIÇO       VERSÃO        │
+│● 192.0.2.20       1 ab.││22/tcp   open           ssh           OpenSSH 8.9p1…│
+│○ 192.0.2.30       0 ab.││443/tcp  open           http          nginx 1.18.0  │
+│                        ││3306/tcp filtered       mysql                       │
+│                        ││123/udp  open|filtered  ntp                         │
+│                        ││Não exibidas: 995 portas closed (resets)            │
+│                        ││                                                    │
+│                        │└────────────────────────────────────────────────────┘
+│                        │┌ Detalhes ──────────────────────────────────────────┐
+│                        ││22/tcp ssh · SSH                                    │
+│                        ││open · motivo: syn-ack                              │
+│                        ││                                                    │
+│                        ││SIGNIFICA                                           │
+│                        ││Há um serviço escutando e aceitando conexões.       │
+│                        ││                                                    │
+└────────────────────────┘└────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sV -oA relatorio scanme.nmap.org
+ ↑↓ mover  ←→ painel  o só abertas  s salvar  Tab abas  / buscar  r executar

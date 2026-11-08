@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<!DOCTYPE nmaprun>
+<nmaprun scanner="nmap" args="nmap -6 -sV 2001:db8::10" start="1767225600" startstr="Thu Jan  1 00:00:00 2026" version="7.95">
+<host><status state="up" reason="syn-ack"/><address addr="2001:db8::10" addrtype="ipv6"/><hostnames><hostname name="v6.exemplo.test" type="user"/></hostnames>
+<ports><port protocol="tcp" portid="443"><state state="open" reason="syn-ack"/><service name="https" product="nginx"/></port></ports></host>
+<runstats><finished elapsed="1.23" summary="Nmap done"/><hosts up="1" down="0" total="1"/></runstats>
+</nmaprun>

@@ -1,0 +1,44 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                                                            Privilégios: usuário comum
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+┌ Alvo ──────────────────────────────────────────┐┌ O que isso faz ────────────────────────────────────────────────────┐
+│[x] Alvos                        scanme.nmap.org││Alvos                                                               │
+│[ ] Lista de alvos em arquivo -iL      alvos.txt││                                                                    │
+│[ ] Alvos aleatórios -iR                      10││O QUE FAZ                                                           │
+│[ ] Excluir alvos --exclude  192.168.0.1,192.16…││Quem será escaneado: um IP, um nome de máquina, uma rede inteira    │
+│[ ] Excluir alvos (arquivo)          excluir.txt││(CIDR) ou uma faixa. Separe vários alvos com espaço ou vírgula.     │
+└────────────────────────────────────────────────┘│                                                                    │
+┌ Formatos aceitos ──────────────────────────────┐│QUANDO USAR                                                         │
+│192.168.0.10       um único IP                  ││Sempre, a não ser que você use uma lista em arquivo (-iL) ou alvos  │
+│servidor.local     um nome de máquina (DNS)     ││aleatórios (-iR).                                                   │
+│192.168.0.0/24     a rede inteira: 256 endereços││                                                                    │
+│192.168.0.1-50     uma faixa de IPs             ││CUIDADO                                                             │
+│192.168.0-3.1      octeto variável: quatro redes││Escaneie apenas o que você possui ou tem autorização por escrito    │
+│10.0.0.5 10.0.0.9  vários alvos, separados por  ││para testar. Para praticar, o projeto Nmap permite escanear         │
+│espaço ou vírgula                               ││scanme.nmap.org.                                                    │
+│2001:db8::1        um endereço IPv6 (use também ││                                                                    │
+│-6)                                             ││EXEMPLOS                                                            │
+│Máx. 64 alvos, 253 caracteres cada; não pode    ││192.168.0.10       um único IP                                      │
+│começar com "-".                                ││servidor.local     um nome de máquina (DNS)                         │
+│                                                ││192.168.0.0/24     a rede inteira: 256 endereços                    │
+│                                                ││192.168.0.1-50     uma faixa de IPs                                 │
+│                                                ││192.168.0-3.1      octeto variável: quatro redes                    │
+│                                                ││10.0.0.5 10.0.0.9  vários alvos, separados por espaço ou vírgula    │
+│                                                ││2001:db8::1        um endereço IPv6 (use também -6)                 │
+│                                                ││                                                                    │
+│                                                ││VALIDAÇÃO                                                           │
+│                                                ││✔ 1 alvo(s) válido(s)                                               │
+│                                                ││                                                                    │
+│                                                ││NESTE MOMENTO                                                       │
+│                                                ││scanme.nmap.org                                                     │
+│                                                ││                                                                    │
+│                                                ││COMO MUDAR                                                          │
+│                                                ││Enter edita o valor; Enter confirma, Esc cancela. Del limpa.        │
+│                                                ││                                                                    │
+└────────────────────────────────────────────────┘└────────────────────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────────────────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sV -oA relatorio scanme.nmap.org
+ ↑↓ mover  Enter editar  Del limpar  Tab abas  / buscar  r executar  y copiar  ? ajuda  q sair

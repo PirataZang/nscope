@@ -1,0 +1,28 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+┌ Andamento ───────────────────────────────────────────────────────────────────┐
+│● Executando… pressione c para cancelar.                                      │
+│                                                                              │
+│[██████████████░░░░░░░░░░░░░░░░░░░░]  42%  00:00  restam 0:00:12              │
+│$ nmap -sV scanme.nmap.org                                                    │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ Saída do nmap ───────────────────────────────────────────────────────────────┐
+│Starting Nmap 7.95 ( https://nmap.org )                                       │
+│Discovered open port 22/tcp on 192.0.2.10                                     │
+│Warning: osscan results may be unreliable                                     │
+│SYN Stealth Scan Timing: About 42.00% done; ETC: 14:03 (0:00:12 remaining)    │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sV -oA relatorio scanme.nmap.org
+ r executar  c cancelar  ↑↓ rolar  Tab abas  / buscar  r executar  y copiar

@@ -1,0 +1,28 @@
+[package]
+name = "nscope"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+description = "TUI em português para montar, explicar e executar o nmap sem decorar flags"
+license = "MIT"
+readme = "README.md"
+keywords = ["nmap", "tui", "security", "appsec"]
+categories = ["command-line-utilities"]
+
+[dependencies]
+ratatui = "0.30.2"          # interface (re-exporta o crossterm)
+roxmltree = "0.21.2"        # leitor XML sem unsafe, com limites de expansão
+shell-words = "1.1.1"       # só para separar os argumentos do campo de flags extras
+unicode-width = "0.2.3"     # largura de colunas no campo de texto
+
+[dev-dependencies]
+insta = "1.49.0"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[profile.release]
+lto = true
+codegen-units = 1
+strip = true
+# panic = "unwind" (padrão): os Drop do runner removem os temporários também em pânico.

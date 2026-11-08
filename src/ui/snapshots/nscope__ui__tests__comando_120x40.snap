@@ -1,0 +1,44 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                                                            Privilégios: usuário comum
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+┌ Comando final ───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│$ nmap -sV -oA relatorio scanme.nmap.org                                                                              │
+│Em palavras simples: Vai examinar scanme.nmap.org, usando a técnica padrão (SYN com administrador, conexão completa   │
+│sem). Testa as 1000 portas mais comuns. Identifica o serviço e a versão de cada porta aberta. Salva o resultado em:   │
+│-oA relatorio.                                                                                                        │
+│Visibilidade estimada (didática): ███░░ alta (1000 portas, detecção de versão)                                        │
+│                                                                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌ Cada pedaço do comando ────────────────────────────────────┐┌ Avisos e problemas (0) ────────────────────────────────┐
+│nmap  o programa que faz o scan                             ││✔ Nenhum problema encontrado. O comando está pronto para│
+│-sV  Além de saber que a porta está aberta, pergunta ao     ││executar (r).                                           │
+│serviço quem ele é: "nginx 1.18" em vez de só "http".       ││                                                        │
+│Essencial para achar software desatualizado.                ││                                                        │
+│-oA relatorio  Salva em texto, XML e grepável de uma vez,   ││                                                        │
+│usando o nome-base informado (cria .nmap, .xml e .gnmap).   ││                                                        │
+│scanme.nmap.org  Alvo: o endereço, nome ou rede que será    ││                                                        │
+│examinado.                                                  ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+└────────────────────────────────────────────────────────────┘└────────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────────────────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sV -oA relatorio scanme.nmap.org
+ ↑↓ avisos  Enter ir à opção  y copiar  Tab abas  / buscar  r executar  y copiar  ? ajuda  q sair

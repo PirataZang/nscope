@@ -1,0 +1,44 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                                                            Privilégios: usuário comum
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+┌ Perfis prontos ────────────────────────────────┐┌ Detalhes ──────────────────────────────────────────────────────────┐
+│  Restaurar padrão                         ██░░░││Restaurar padrão                                                    │
+│  Descobrir hosts na rede                  ░░░░░││Volta todas as opções ao padrão (mantém os alvos).                  │
+│★ Padrão com serviços                      ███░░││                                                                    │
+│  Scan rápido                              ██░░░││QUANDO USAR                                                         │
+│  Todas as portas                          █████││Para começar de novo.                                               │
+│  Auditoria com scripts                    ████░││                                                                    │
+│  Reconhecimento completo                  █████││VISIBILIDADE ESTIMADA (DIDÁTICA)                                    │
+│  Caça a vulnerabilidades                  █████││██░░░ média  (1000 portas)                                          │
+│  Discreto para teste autorizado           ░░░░░││                                                                    │
+│  UDP: portas comuns                       ██░░░││COMANDO EQUIVALENTE                                                 │
+│  Mapear regras de firewall                █░░░░││$ nmap scanme.nmap.org                                              │
+│  Sites e HTTPS                            ███░░││                                                                    │
+│  Windows e SMB                            ███░░││O QUE CADA PARTE FAZ                                                │
+│  Só listar alvos                          ░░░░░││Nenhuma opção extra: o nmap usa tudo no padrão.                     │
+│  IPv6                                     ███░░││                                                                    │
+│  Padrão + relatórios salvos               ███░░││Enter aplica (mantém os alvos e restaura o resto ao padrão).        │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+│                                                ││                                                                    │
+└────────────────────────────────────────────────┘└────────────────────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────────────────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sV -oA relatorio scanme.nmap.org
+ ↑↓ escolher  Enter aplicar  Tab abas  / buscar  r executar  y copiar  ? ajuda  q sair

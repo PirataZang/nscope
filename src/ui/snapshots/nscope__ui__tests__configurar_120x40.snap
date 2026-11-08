@@ -1,0 +1,44 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                                                            Privilégios: usuário comum
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+ Descoberta  Técnica  Portas  Serviços e SO•1  Scripts  Tempo  Evasão  Saída•1  Avançado
+┌ Portas ────────────────────────────────────────┐┌ O que isso faz ────────────────────────────────────────────────────┐
+│[ ] Quais portas escanear                 Padrão││Quais portas escanear                                               │
+│[ ] Excluir portas --exclude-ports      9100,515││                                                                    │
+│[ ] Portas em ordem sequencial -r               ││O QUE FAZ                                                           │
+│                                                ││Cada serviço de rede escuta em uma porta (web: 80/443, SSH: 22).    │
+│                                                ││Aqui você escolhe quantas e quais testar.                           │
+│                                                ││                                                                    │
+│                                                ││QUANDO USAR                                                         │
+│                                                ││Padrão para começar; "Todas" quando precisa de cobertura total;     │
+│                                                ││"Lista" quando já sabe o que procura.                               │
+│                                                ││                                                                    │
+│                                                ││CUIDADO                                                             │
+│                                                ││Todas as 65535 portas podem levar muitos minutos e geram bastante   │
+│                                                ││tráfego.                                                            │
+│                                                ││                                                                    │
+│                                                ││VALORES POSSÍVEIS                                                   │
+│                                                ││▸ Padrão: 1000 mais comuns                                          │
+│                                                ││  Cobre as 1000 portas mais usadas, segundo a base do nmap. Serve   │
+│                                                ││para a maioria dos casos.                                           │
+│                                                ││  Rápido: 100 mais comuns (-F)                                      │
+│                                                ││  Testa só as 100 portas mais comuns. Bem mais rápido, mas pode     │
+│                                                ││perder serviços incomuns.                                           │
+│                                                ││  Todas as 65535 (-p-)                                              │
+│                                                ││  Testa todas as portas. Acha serviços escondidos em portas altas,  │
+│                                                ││mas demora bem mais.                                                │
+│                                                ││  Lista ou faixa (-p)                                               │
+│                                                ││  Você escolhe: 22,80,443 ou 1-1024 ou T:80,U:53 (T = TCP, U = UDP).│
+│                                                ││  N mais comuns (--top-ports)                                       │
+│                                                ││  As N portas mais frequentes segundo a base de dados do nmap.      │
+│                                                ││  Por frequência (--port-ratio)                                     │
+│                                                ││  Testa portas cuja frequência de uso é maior que a razão informada │
+│                                                ││(0.0 a 1.0).                                                        │
+│                                                ││                                                                    │
+└────────────────────────────────────────────────┘└────────────────────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────────────────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sV -oA relatorio scanme.nmap.org
+ ↑↓ mover  ←→ sub-aba  Enter ligar/editar  Del limpar  Tab abas  / buscar  r executar  y copiar  ? ajuda  q sair

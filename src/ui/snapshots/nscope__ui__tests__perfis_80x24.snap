@@ -1,0 +1,28 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+┌ Perfis prontos ────────────────────┐┌ Detalhes ──────────────────────────────┐
+│  Restaurar padrão             ██░░░││Restaurar padrão                        │
+│  Descobrir hosts na rede      ░░░░░││Volta todas as opções ao padrão (mantém │
+│★ Padrão com serviços          ███░░││os alvos).                              │
+│  Scan rápido                  ██░░░││                                        │
+│  Todas as portas              █████││QUANDO USAR                             │
+│  Auditoria com scripts        ████░││Para começar de novo.                   │
+│  Reconhecimento completo      █████││                                        │
+│  Caça a vulnerabilidades      █████││VISIBILIDADE ESTIMADA (DIDÁTICA)        │
+│  Discreto para teste autori… ░░░░░ ││██░░░ média  (1000 portas)              │
+│  UDP: portas comuns           ██░░░││                                        │
+│  Mapear regras de firewall    █░░░░││COMANDO EQUIVALENTE                     │
+│  Sites e HTTPS                ███░░││$ nmap scanme.nmap.org                  │
+│  Windows e SMB                ███░░││                                        │
+│  Só listar alvos              ░░░░░││O QUE CADA PARTE FAZ                    │
+│  IPv6                         ███░░││Nenhuma opção extra: o nmap usa tudo no │
+│  Padrão + relatórios salvos   ███░░││padrão.                                 │
+│                                    ││                                        │
+└────────────────────────────────────┘└────────────────────────────────────────┘
+ Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sV -oA relatorio scanme.nmap.org
+ ↑↓ escolher  Enter aplicar  Tab abas  / buscar  r executar  y copiar  ? ajuda

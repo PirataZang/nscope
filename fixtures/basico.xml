@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE nmaprun>
+<?xml-stylesheet href="file:///usr/bin/../share/nmap/nmap.xsl" type="text/xsl"?>
+<!-- Dados fictícios: apenas a faixa de documentação 192.0.2.0/24 e nomes *.exemplo.test -->
+<nmaprun scanner="nmap" args="nmap -sV -O --traceroute 192.0.2.0/24" start="1767225600" startstr="Thu Jan  1 00:00:00 2026" version="7.95" xmloutputversion="1.05">
+<scaninfo type="syn" protocol="tcp" numservices="1000" services="1-1000"/>
+<verbose level="0"/>
+<host starttime="1767225601" endtime="1767225610"><status state="up" reason="echo-reply" reason_ttl="64"/>
+<address addr="192.0.2.10" addrtype="ipv4"/>
+<address addr="00:00:5E:00:53:01" addrtype="mac" vendor="Exemplo"/>
+<hostnames><hostname name="servidor.exemplo.test" type="PTR"/></hostnames>
+<ports><extraports state="closed" count="995"><extrareasons reason="resets" count="995" proto="tcp" ports="1-21,23-79"/></extraports>
+<port protocol="tcp" portid="22"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="ssh" product="OpenSSH" version="8.9p1" extrainfo="Ubuntu Linux; protocol 2.0" method="probed" conf="10"/><script id="ssh-hostkey" output="&#10;  256 3f:1a:9c:00:00:00:00:00:00:00:00:00:00:00:e2:01 (ECDSA)&#10;  256 7b:44:0d:00:00:00:00:00:00:00:00:00:00:00:51:02 (ED25519)"/></port>
+<port protocol="tcp" portid="443"><state state="open" reason="syn-ack" reason_ttl="64"/><service name="http" product="nginx" version="1.18.0" tunnel="ssl" method="probed" conf="10"/><script id="ssl-cert" output="Subject: commonName=servidor.exemplo.test"/></port>
+<port protocol="tcp" portid="3306"><state state="filtered" reason="no-response" reason_ttl="0"/><service name="mysql" method="table" conf="3"/></port>
+<port protocol="udp" portid="123"><state state="open|filtered" reason="no-response" reason_ttl="0"/><service name="ntp" method="table" conf="3"/></port>
+</ports>
+<os><osmatch name="Linux 5.4 - 5.15" accuracy="96" line="1"><osclass type="general purpose" vendor="Linux" osfamily="Linux" osgen="5.X" accuracy="96"/></osmatch></os>
+<trace port="443" proto="tcp"><hop ttl="1" ipaddr="192.0.2.1" rtt="0.31" host="gateway.exemplo.test"/><hop ttl="2" ipaddr="192.0.2.10" rtt="0.84" host="servidor.exemplo.test"/></trace>
+<hostscript><script id="smb-os-discovery" output="&#10;  OS: Exemplo 1.0&#10;  Computer name: SERVIDOR"/></hostscript>
+<times srtt="2100" rttvar="300" to="100000"/>
+</host>
+<host><status state="up" reason="arp-response" reason_ttl="0"/><address addr="192.0.2.20" addrtype="ipv4"/><hostnames/>
+<ports><port protocol="tcp" portid="3389"><state state="open" reason="syn-ack" reason_ttl="128"/><service name="ms-wbt-server" product="Microsoft Terminal Services" ostype="Windows" method="probed" conf="10"/></port></ports>
+</host>
+<host><status state="down" reason="no-response" reason_ttl="0"/><address addr="192.0.2.30" addrtype="ipv4"/></host>
+<runstats><finished time="1767225614" timestr="Thu Jan  1 00:00:14 2026" summary="Nmap done at Thu Jan  1 00:00:14 2026; 3 IP addresses (2 hosts up) scanned in 14.52 seconds" elapsed="14.52" exit="success"/><hosts up="2" down="1" total="3"/></runstats>
+</nmaprun>

@@ -1,0 +1,28 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+┌ Alvo ──────────────────────────────┐┌ O que isso faz ────────────────────────┐
+│[x┌ Buscar ────────────────────────────────────────────────────────────────┐  │
+│[ │/ ud                                                                    │  │
+│[ │Buscar opção: nome, flag ou o que faz (ex.: udp, -sV, firewall)         │  │
+│[ │ --exclude          Excluir alvos                      Alvo             │  │
+│[ │ --excludefile      Excluir alvos (arquivo)            Alvo             │a │
+└──│ -PU                Ping UDP (portas)                  Descoberta       │ou│
+┌ F│ -sU                Escanear também UDP                Técnica          │  │
+│19│ --exclude-ports    Excluir portas                     Portas           │  │
+│se│ -A                 Modo agressivo (tudo junto)        Serviços e SO    │  │
+│má│ --script-help      Ajuda de um script                 Scripts          │ta│
+│19│ --defeat-icmp-rat… Ignorar limite de ICMP             Tempo            │  │
+│25│ -h                 Mostrar a ajuda do nmap            Avançado         │  │
+│19│↑↓ escolher · Enter ir · Esc fechar                                     │  │
+│19└────────────────────────────────────────────────────────────────────────┘  │
+│quatro redes                        ││Escaneie apenas o que você possui ou tem│
+│10.0.0.5 10.0.0.9  vários alvos,    ││autorização por escrito para testar.    │
+│separados por espaço ou vírgula     ││Para praticar, o projeto Nmap permite   │
+└────────────────────────────────────┘└────────────────────────────────────────┘
+ Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap scanme.nmap.org
+ ↑↓ mover  Enter editar  Del limpar  Tab abas  / buscar  r executar  y copiar
