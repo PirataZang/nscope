@@ -14,7 +14,9 @@
 **Monta o comando do nmap, explica cada pedaço, avisa dos riscos antes de rodar e mostra o resultado de um jeito que dá para navegar.**
 Tudo no terminal, em português, no estilo lazygit.
 
-[🚀 Instalar](#-instalação) · [🎬 Ver em ação](#-veja-funcionando) · [🎹 Atalhos](#-atalhos) · [🔐 Segurança](#-segurança-modelo-de-ameaças-resumido) · [🤝 Contribuir](#-como-contribuir)
+**[🐧 Instalar no Linux](#linux) &nbsp;·&nbsp; [🪟 Instalar no Windows](#windows) &nbsp;·&nbsp; [🍎 macOS](#macos)**
+
+[Ver em ação](#veja-funcionando) · [Uso](#uso-em-4-passos) · [Atalhos](#atalhos) · [Segurança](#segurança-modelo-de-ameaças-resumido) · [Contribuir](#como-contribuir)
 
 <img src="docs/media/fluxo.gif" alt="nscope escaneando scanme.nmap.org: alvo, perfil, comando explicado, execução e resultados" width="800">
 
@@ -22,26 +24,211 @@ Tudo no terminal, em português, no estilo lazygit.
 
 </div>
 
-> ⚠️ **Aviso legal:** use o nscope (e o nmap) apenas em sistemas que você possui ou para os quais tem **autorização por escrito**. Escanear sem permissão pode ser crime. Para praticar, use `scanme.nmap.org` (o projeto Nmap permite, com moderação) ou um laboratório seu.
+> [!WARNING]
+> Use o nscope (e o nmap) apenas em sistemas que você possui ou para os quais tem **autorização por escrito**. Escanear sem permissão pode ser crime. Para praticar, use `scanme.nmap.org` (o projeto Nmap permite, com moderação) ou um laboratório seu.
 
-O nscope **não reimplementa o nmap**: ele executa o `nmap` instalado no seu sistema, sem shell, e só isso. Sem telemetria, sem conexões de rede próprias.
+## O que é
 
-> 🖥️ É um programa **de terminal**: abra um terminal (Windows Terminal, GNOME Terminal, iTerm2...) e rode `nscope`. Precisa de pelo menos **80×24**.
+O nscope é uma interface de terminal para o nmap. Você escolhe o alvo e as opções em menus, ele mostra o comando que vai rodar com cada flag explicada, executa o `nmap` instalado no seu sistema e apresenta os hosts e portas encontrados.
 
-## ✨ Por que usar
+Ele não reimplementa o nmap: chama o `nmap` direto, sem shell. Não tem telemetria nem faz conexões de rede próprias.
+
+Roda em qualquer terminal (Windows Terminal, PowerShell, GNOME Terminal, iTerm2...) com pelo menos **80×24** caracteres.
+
+## Instalação
+
+São dois programas: o **nmap**, que faz o scan, e o **nscope**, que é compilado a partir deste repositório com o `cargo` (o gerenciador do Rust). Escolha o seu sistema:
+
+| Sistema | O que fazer |
+|---|---|
+| 🐧 **Linux** | [Passo a passo para Linux](#linux) |
+| 🪟 **Windows** | [Passo a passo para Windows](#windows) |
+| 🍎 **macOS** | [Passo a passo para macOS](#macos) |
+
+### Linux
+
+> [!TIP]
+> **Resumo para quem já tem Rust:** instale o nmap pelo gerenciador da sua distro e rode
+> `cargo install --git https://github.com/PirataZang/nscope --locked`
+
+**Passo 1. Instale o nmap e o compilador C** (o Rust usa o `cc` para gerar o executável final):
+
+| Distribuição | Comando |
+|---|---|
+| Debian / Ubuntu / Mint | `sudo apt install nmap build-essential curl` |
+| Fedora / RHEL | `sudo dnf install nmap gcc curl` |
+| Arch / Manjaro | `sudo pacman -S nmap base-devel curl` |
+
+**Passo 2. Instale o Rust** (versão 1.88 ou mais nova). O Rust dos repositórios da distro costuma ser antigo, então use o `rustup`:
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+. "$HOME/.cargo/env"
+```
+
+Se você já tinha Rust instalado, atualize com `rustup update`.
+
+**Passo 3. Instale o nscope:**
+
+```bash
+cargo install --git https://github.com/PirataZang/nscope --locked
+```
+
+A compilação leva um ou dois minutos. O executável fica em `~/.cargo/bin/nscope`.
+
+**Passo 4. Confira e abra:**
+
+```bash
+nmap --version
+nscope
+```
+
+Para scans que pedem root (SYN, UDP, detecção de SO), rode `sudo "$(command -v nscope)"`. O `command -v` é necessário porque o `sudo` não enxerga o `~/.cargo/bin` no PATH.
+
+### Windows
+
+Todos os comandos abaixo são para o **PowerShell**. Use o Windows Terminal ou o próprio PowerShell.
+
+> [!TIP]
+> **Resumo para quem já tem Rust:** `winget install Insecure.Nmap` e depois
+> `cargo install --git https://github.com/PirataZang/nscope --locked`
+
+**Passo 1. Instale o nmap:**
+
+```powershell
+winget install Insecure.Nmap
+```
+
+O pacote inclui o **Npcap**, que o nmap usa para capturar pacotes. Se abrir a janela do instalador do Npcap, conclua com as opções padrão. Também dá para baixar o instalador em [nmap.org/download](https://nmap.org/download.html#windows).
+
+**Passo 2. Instale as ferramentas de compilação C++ da Microsoft** (o Rust precisa do `link.exe` delas):
+
+```powershell
+winget install Microsoft.VisualStudio.2022.BuildTools --override "--wait --passive --add Microsoft.VisualStudio.Workload.VCTools --includeRecommended"
+```
+
+São alguns GB de download. Se você já tem o Visual Studio com "Desenvolvimento para desktop com C++", pule este passo.
+
+**Passo 3. Instale o Rust:**
+
+```powershell
+winget install Rustlang.Rustup
+```
+
+**Feche e abra o PowerShell de novo**, para ele enxergar o `nmap`, o `cargo` e o `rustup` no PATH. Depois garanta que há um Rust estável instalado:
+
+```powershell
+rustup default stable
+```
+
+**Passo 4. Instale o nscope:**
+
+```powershell
+cargo install --git https://github.com/PirataZang/nscope --locked
+```
+
+O executável fica em `%USERPROFILE%\.cargo\bin\nscope.exe`.
+
+**Passo 5. Confira e abra:**
+
+```powershell
+nmap --version
+nscope
+```
+
+Para scans que pedem administrador (SYN, UDP, detecção de SO), abra o Windows Terminal com **"Executar como administrador"** e rode `nscope`.
+
+### macOS
+
+```bash
+brew install nmap                                                   # 1. nmap (Homebrew)
+xcode-select --install                                              # 2. compilador (se ainda não tiver)
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh     # 3. Rust
+. "$HOME/.cargo/env"
+cargo install --git https://github.com/PirataZang/nscope --locked   # 4. nscope
+nscope
+```
+
+Com privilégios: `sudo "$(command -v nscope)"`.
+
+### Atualizar e desinstalar
+
+| | Comando (igual em todos os sistemas) |
+|---|---|
+| Atualizar para a versão mais nova | `cargo install --git https://github.com/PirataZang/nscope --locked --force` |
+| Desinstalar | `cargo uninstall nscope` |
+
+### Problemas comuns
+
+| Mensagem | Causa e solução |
+|---|---|
+| `nscope: command not found` / `O termo 'nscope' não é reconhecido` | O terminal foi aberto antes da instalação do Rust. Feche e abra de novo. No Linux/macOS, também resolve rodar `. "$HOME/.cargo/env"`. |
+| `linker 'cc' not found` (Linux) | Falta o compilador C. Volte ao passo 1 do Linux (`build-essential`, `gcc` ou `base-devel`). |
+| `linker 'link.exe' not found` (Windows) | Faltam as ferramentas C++. Refaça o passo 2 do Windows e abra um PowerShell novo. |
+| `requires rustc 1.88` | Rust antigo. Rode `rustup update`. |
+| O nscope abre e diz que o nmap não foi encontrado | O nmap não está no PATH. Confira com `nmap --version` num terminal novo. Sem o nmap, o nscope ainda monta e explica comandos, mas não executa. |
+| A execução é bloqueada por falta de privilégio | A opção escolhida precisa de root/administrador. Veja [Privilégios](#privilégios-sudo--administrador). |
+
+<details>
+<summary><b>Binários prontos (sem compilar)</b></summary>
+
+<br>
+
+Ainda não há release publicada. Quando houver, cada release em [Releases](https://github.com/PirataZang/nscope/releases) terá binários para Linux (musl), macOS (x86_64 e arm64) e Windows, junto com `SHA256SUMS.txt`, SBOM CycloneDX e atestado de build. Troque `V` pela versão publicada.
+
+```bash
+# Linux / macOS
+REPO=PirataZang/nscope; V=v0.1.0; T=x86_64-unknown-linux-musl   # ou x86_64-apple-darwin / aarch64-apple-darwin
+curl -LO https://github.com/$REPO/releases/download/$V/nscope-$V-$T.tar.gz
+curl -LO https://github.com/$REPO/releases/download/$V/SHA256SUMS.txt
+sha256sum -c --ignore-missing SHA256SUMS.txt        # no macOS: shasum -a 256 -c --ignore-missing SHA256SUMS.txt
+gh attestation verify nscope-$V-$T.tar.gz --repo $REPO   # opcional: verifica a origem do build
+tar xzf nscope-$V-$T.tar.gz && sudo install nscope-$V-$T/nscope /usr/local/bin/
+```
+
+```powershell
+# Windows
+$Repo="PirataZang/nscope"; $V="v0.1.0"; $T="x86_64-pc-windows-msvc"
+Invoke-WebRequest "https://github.com/$Repo/releases/download/$V/nscope-$V-$T.zip" -OutFile nscope.zip
+Invoke-WebRequest "https://github.com/$Repo/releases/download/$V/SHA256SUMS.txt" -OutFile SHA256SUMS.txt
+(Get-FileHash nscope.zip -Algorithm SHA256).Hash.ToLower()   # compare com a linha do nscope-...zip em SHA256SUMS.txt
+Expand-Archive nscope.zip -DestinationPath .
+.\nscope-$V-$T\nscope.exe
+```
+
+</details>
+
+### Privilégios (sudo / administrador)
+
+Várias técnicas (SYN `-sS`, UDP `-sU`, detecção de SO `-O`...) exigem root ou administrador. O nscope nunca se eleva sozinho: ele detecta o nível atual, mostra na barra de título e bloqueia a execução com uma mensagem clara quando falta privilégio.
+
+- **Linux/macOS:** `sudo "$(command -v nscope)"`.
+- **Windows:** abra o Windows Terminal como administrador e rode `nscope`.
+- Se o seu `nmap` tem *capabilities* (Linux), use *Configurar → Avançado → Modo de privilégios → Assumir administrador*.
+
+## Uso em 4 passos
+
+1. **Alvo (`1`)**: digite o que escanear (um IP, um nome, `192.168.0.0/24`...). A validação acontece enquanto você digita.
+2. **Perfis (`2`) ou Configurar (`3`)**: aplique um perfil pronto (★ *Padrão com serviços* é o recomendado para começar) ou ajuste opção por opção. O painel da direita explica a opção selecionada.
+3. **Comando (`4`)**: revise o comando final, o resumo "em palavras simples", a visibilidade estimada e os avisos (`Enter` leva até a opção responsável).
+4. **Execução (`5`)**: `r` executa, `c` cancela. Ao terminar, veja os **Resultados (`6`)**.
+
+Para abrir um XML que você já tem: `nscope --open scan.xml`. Para só imprimir um comando: `nscope --print-command --profile "Scan rápido" --target 192.0.2.10`. Todas as opções de linha de comando: `nscope --help`.
+
+## Por que usar
 
 | | |
 |---|---|
-| 🧠 **Todo comando é explicado** | Para cada opção: o que faz, quando usar e o cuidado. Cada pedaço do comando final tem uma explicação ao lado. |
-| 🎨 **Comando sempre visível** | Barra fixa e colorida, com cópia por tecla (`y`). |
-| 🛡️ **Segurança na frente** | Avisos de privilégio, conflito, escopo e risco **antes** de executar. Alvo fora de rede privada exige confirmação (padrão *Não*). |
-| 🧰 **Cobertura total** | ~110 opções em telas próprias, 16 perfis prontos e um campo livre para qualquer flag nova ou rara. Veja o [catálogo](docs/CATALOGO.md). |
-| ⌨️ **Teclado primeiro, mouse opcional** | Funciona com `NO_COLOR` e em terminais de 16 cores. |
-| 🔎 **Busca global** | `/` encontra qualquer opção por nome, flag ou descrição e salta até ela. |
-| 🧾 **Relatório em Markdown** | `s` salva o resultado, sem sobrescrever arquivos existentes. |
-| 🤝 **Honesto** | Sem o nmap instalado, a interface monta comandos e diz como instalar. Nunca inventa resultado. |
+| **Todo comando é explicado** | Para cada opção: o que faz, quando usar e o cuidado. Cada pedaço do comando final tem uma explicação ao lado. |
+| **Comando sempre visível** | Barra fixa e colorida, com cópia por tecla (`y`). |
+| **Avisos antes de rodar** | Privilégio, conflito, escopo e risco aparecem **antes** de executar. Alvo fora de rede privada exige confirmação (padrão *Não*). |
+| **~110 opções** | Cada uma em sua tela, 16 perfis prontos e um campo livre para qualquer flag nova ou rara. Veja o [catálogo](docs/CATALOGO.md). |
+| **Teclado primeiro, mouse opcional** | Funciona com `NO_COLOR` e em terminais de 16 cores. |
+| **Busca global** | `/` encontra qualquer opção por nome, flag ou descrição e leva até ela. |
+| **Relatório em Markdown** | `s` salva o resultado, sem sobrescrever arquivos existentes. |
+| **Funciona sem o nmap** | A interface monta e explica comandos e diz como instalar o nmap. Nunca inventa resultado. |
 
-## 🧭 Como funciona
+## Como funciona
 
 ```mermaid
 flowchart LR
@@ -53,102 +240,9 @@ flowchart LR
     C -.->|"y"| G["📋 Copiar comando"]
 ```
 
-> Por baixo: o nscope chama `nmap` com uma **lista de argumentos** (nunca por um shell), lê o XML (`-oX`) que o próprio nmap gera e desenha na tela. Nada além disso.
+Por baixo, o nscope chama `nmap` com uma lista de argumentos (nunca por um shell), lê o XML (`-oX`) que o próprio nmap gera e desenha o resultado na tela.
 
-## 🚀 Instalação
-
-Você precisa de **dois programas**: o **nmap** e o **nscope**.
-
-### 1) Instale o nmap
-
-| Sistema | Comando |
-|---|---|
-| Debian / Ubuntu / Mint | `sudo apt install nmap` |
-| Fedora / RHEL | `sudo dnf install nmap` |
-| Arch / Manjaro | `sudo pacman -S nmap` |
-| macOS (Homebrew) | `brew install nmap` |
-| **Windows** (PowerShell) | `winget install Insecure.Nmap` *(instala também o Npcap, necessário para scans avançados)* |
-
-Confira: `nmap --version`
-
-### 2) Instale o nscope
-
-#### Linux e macOS — compilando do código-fonte
-
-```bash
-# 2.1 Rust (se ainda não tiver). Requer Rust 1.88 ou mais novo.
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-. "$HOME/.cargo/env"
-
-# 2.2 baixe e instale o nscope
-git clone https://github.com/SEU-USUARIO/nscope.git     # troque pela URL do repositório
-cd nscope
-cargo install --path . --locked
-
-# 2.3 rode
-nscope
-```
-
-O binário fica em `~/.cargo/bin/nscope`.
-
-#### Windows (PowerShell) — compilando do código-fonte
-
-```powershell
-# 2.1 Rust e ferramentas de compilação
-winget install Rustlang.Rustup
-winget install Microsoft.VisualStudio.2022.BuildTools   # marque "Desenvolvimento para desktop com C++"
-
-# 2.2 (feche e reabra o PowerShell) baixe e instale o nscope
-git clone https://github.com/SEU-USUARIO/nscope.git     # troque pela URL do repositório
-cd nscope
-cargo install --path . --locked
-
-# 2.3 rode no Windows Terminal ou PowerShell
-nscope
-```
-
-#### Binários prontos (quando houver uma release)
-
-Cada release publica binários para Linux (musl), macOS (x86_64 e arm64) e Windows, junto com `SHA256SUMS.txt`, SBOM CycloneDX e atestado de build.
-
-```bash
-# Linux / macOS
-REPO=SEU-USUARIO/nscope; V=v0.1.0; T=x86_64-unknown-linux-musl   # ou x86_64-apple-darwin / aarch64-apple-darwin
-curl -LO https://github.com/$REPO/releases/download/$V/nscope-$V-$T.tar.gz
-curl -LO https://github.com/$REPO/releases/download/$V/SHA256SUMS.txt
-sha256sum -c --ignore-missing SHA256SUMS.txt        # no macOS: shasum -a 256 -c --ignore-missing SHA256SUMS.txt
-gh attestation verify nscope-$V-$T.tar.gz --repo $REPO   # opcional: verifica a origem do build
-tar xzf nscope-$V-$T.tar.gz && sudo install nscope-$V-$T/nscope /usr/local/bin/
-```
-
-```powershell
-# Windows
-$Repo="SEU-USUARIO/nscope"; $V="v0.1.0"; $T="x86_64-pc-windows-msvc"
-Invoke-WebRequest "https://github.com/$Repo/releases/download/$V/nscope-$V-$T.zip" -OutFile nscope.zip
-Invoke-WebRequest "https://github.com/$Repo/releases/download/$V/SHA256SUMS.txt" -OutFile SHA256SUMS.txt
-(Get-FileHash nscope.zip -Algorithm SHA256).Hash.ToLower()   # compare com a linha do nscope-...zip em SHA256SUMS.txt
-Expand-Archive nscope.zip -DestinationPath .
-.\nscope-$V-$T\nscope.exe
-```
-
-### Privilégios (sudo / administrador)
-
-Várias técnicas (SYN `-sS`, UDP `-sU`, detecção de SO `-O`...) exigem administrador. O nscope **nunca se eleva sozinho**: ele detecta, mostra na barra de título e bloqueia a execução com uma mensagem clara se faltar.
-
-- **Linux/macOS:** `sudo "$(command -v nscope)"` (o `sudo` costuma não enxergar `~/.cargo/bin` no PATH, por isso o `command -v`).
-- **Windows:** abra o *Windows Terminal* **como administrador** e rode `nscope`.
-- Se o seu `nmap` tem *capabilities* (Linux), use *Configurar → Avançado → Modo de privilégios → Assumir administrador*.
-
-## 🧪 Uso em 4 passos
-
-1. **Alvo (`1`)**: digite o que escanear (um IP, um nome, `192.168.0.0/24`...). A validação é ao vivo.
-2. **Perfis (`2`) ou Configurar (`3`)**: aplique um perfil pronto (★ *Padrão com serviços* é o recomendado) ou ajuste opção por opção. A tela da direita explica tudo.
-3. **Comando (`4`)**: revise o comando final, o resumo "em palavras simples", a visibilidade estimada e os avisos (`Enter` salta até a opção responsável).
-4. **Execução (`5`)**: `r` executa, `c` cancela. Ao terminar, veja os **Resultados (`6`)**.
-
-Para abrir um XML que você já tem: `nscope --open scan.xml`. Para só imprimir um comando: `nscope --print-command --profile "Scan rápido" --target 192.0.2.10`.
-
-## 🎹 Atalhos
+## Atalhos
 
 | Tecla | Ação |
 |---|---|
@@ -168,7 +262,7 @@ Para abrir um XML que você já tem: `nscope --open scan.xml`. Para só imprimir
 Na edição de texto: `Enter` confirma, `Esc` cancela e restaura, o comando atualiza enquanto você digita.
 Mouse (opcional): clique em abas, sub-abas e linhas.
 
-## 🎬 Veja funcionando
+## Veja funcionando
 
 Tudo abaixo foi **gravado do programa de verdade** (o nmap rodando contra `scanme.nmap.org`), com mouse, teclado e zoom nos pontos importantes. Cada vídeo tem versão MP4 em 1080p e 30 fps.
 
@@ -202,7 +296,7 @@ Avisos de privilégio, conflitos e risco aparecem **antes** de rodar. Alvo fora 
 <sub><a href="docs/media/seguranca.mp4">▶ Assistir em MP4 (1080p, 30 fps)</a></sub>
 </div>
 
-### 🖼️ Galeria
+### Galeria
 
 <table>
 <tr>
@@ -306,7 +400,7 @@ $ nmap -sV -oA relatorio scanme.nmap.org
 
 > 🎞️ Os vídeos são gerados por [`docs/demo/gerar.py`](docs/demo/gerar.py), que controla o nscope num pseudoterminal e renderiza os quadros (cursor, cliques, zoom). Para refazer: `python3 -m venv .venv && .venv/bin/pip install pyte pillow` e depois `.venv/bin/python docs/demo/gerar.py` (precisa de `ffmpeg`, `nmap` e do `nscope` no PATH). A logo sai de [`docs/demo/logo.py`](docs/demo/logo.py).
 
-## 🧩 Recursos
+## Recursos
 
 - 7 telas: Alvo · Perfis · Configurar (Descoberta · Técnica · Portas · Serviços e SO · Scripts · Tempo · Evasão · Saída · Avançado) · Comando · Execução · Resultados · Ajuda.
 - 16 perfis prontos (descobrir hosts, padrão com serviços, vulnerabilidades, discreto, UDP, firewall, web, SMB, IPv6, relatórios...).
@@ -316,7 +410,7 @@ $ nmap -sV -oA relatorio scanme.nmap.org
 - Relatório Markdown (`s`), criado sem sobrescrever arquivos existentes.
 - Terminal sempre restaurado (também em pânico e `Ctrl+C`); temporários sempre removidos.
 
-## 🔐 Segurança (modelo de ameaças resumido)
+## Segurança (modelo de ameaças resumido)
 
 Detalhes e política de divulgação em [SECURITY.md](SECURITY.md).
 
@@ -327,7 +421,7 @@ Detalhes e política de divulgação em [SECURITY.md](SECURITY.md).
 - **Autorização**: confirmação explícita para alvos fora de redes privadas (padrão *Não*).
 - **Não protege**: o próprio nmap/NSE, a autorização legal, um sistema já comprometido, `SIGKILL`.
 
-## 📦 Dependências (todas justificadas)
+## Dependências
 
 | Crate | Por quê |
 |---|---|
@@ -337,7 +431,7 @@ Detalhes e política de divulgação em [SECURITY.md](SECURITY.md).
 | `unicode-width` | largura de colunas correta no campo de texto e nas tabelas |
 | `insta` *(dev)* | testes de snapshot das telas |
 
-## 🔧 Desenvolvimento
+## Desenvolvimento
 
 ```bash
 cargo fmt --check
@@ -348,7 +442,7 @@ cargo deny check && cargo audit       # licenças e vulnerabilidades
 
 Rust 1.88+ para compilar (1.89+ para rodar os testes, por causa do `insta`). Arquitetura em [docs/ARQUITETURA.md](docs/ARQUITETURA.md); decisões em [docs/DECISOES.md](docs/DECISOES.md).
 
-## 🤝 Como contribuir
+## Como contribuir
 
 1. Abra uma issue descrevendo a mudança (falhas de segurança: veja [SECURITY.md](SECURITY.md), **não** use issue pública).
 2. Faça o fork, crie um branch, rode os comandos de *Desenvolvimento* acima.
@@ -366,6 +460,6 @@ n(Tempo, "minrate", "--min-rate", "Taxa mínima (pacotes/s)", "Texto simples do 
 
 Rode `UPDATE_CATALOG=1 cargo test catalogo` para atualizar [docs/CATALOGO.md](docs/CATALOGO.md) e adicione regras em `src/nmap/analyze.rs` se a opção tiver conflitos. Um teste confere que **toda** opção do catálogo emite exatamente a sua flag.
 
-## 📄 Licença
+## Licença
 
 [MIT](LICENSE).
