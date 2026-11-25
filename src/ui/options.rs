@@ -22,7 +22,7 @@ pub fn split(area: Rect) -> [Rect; 2] {
 pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
     let [l, r] = split(area);
     let title = app.section().map_or("", |s| s.title());
-    draw_list(f, app, l, title);
+    draw_list(f, app, l, title, 0);
     draw_detail(f, app, r);
 }
 
@@ -56,20 +56,22 @@ fn value_text(app: &App, o: &Opt) -> (String, bool) {
     }
 }
 
-pub fn draw_list(f: &mut Frame, app: &mut App, area: Rect, title: &str) {
+/// Lista de opções a partir da linha `first` (a aba Alvo desenha a linha 0 à parte).
+pub fn draw_list(f: &mut Frame, app: &mut App, area: Rect, title: &str, first: usize) {
     let t = app.theme;
     f.render_widget(block(&t, title), area);
     let i = inner(area);
     let rows = app.rows();
     let cur = app.cursor().min(rows.len().saturating_sub(1));
     let key = app.list_key();
-    let off = super::widgets::list::scroll_offset(
-        app.list_offset[key],
-        cur,
-        i.height as usize,
-        rows.len(),
-    );
-    app.list_offset[key] = off;
+    let off = first
+        + super::widgets::list::scroll_offset(
+            app.list_offset[key],
+            cur.saturating_sub(first),
+            i.height as usize,
+            rows.len().saturating_sub(first),
+        );
+    app.list_offset[key] = off - first;
     let w = i.width as usize;
     let mut lines: Vec<Line> = Vec::new();
     for (n, row) in rows.iter().enumerate().skip(off).take(i.height as usize) {
@@ -305,7 +307,8 @@ fn opt_detail(app: &App, o: &'static Opt) -> Vec<Line<'static>> {
             out.push(Line::styled(format!("  {}", c.what), t.dim()));
         }
     }
-    if !o.examples.is_empty() {
+    let in_target_box = o.id == "targets" && app.tab == crate::app::Tab::Alvo;
+    if !o.examples.is_empty() && !in_target_box {
         out.push(Line::raw(""));
         out.push(heading(t, i18n::K_EXAMPLES, false));
         for (a, b) in &o.examples {
@@ -335,7 +338,7 @@ fn opt_detail(app: &App, o: &'static Opt) -> Vec<Line<'static>> {
         )));
     }
     // validação
-    if o.id == "targets" {
+    if o.id == "targets" && !in_target_box {
         out.push(Line::raw(""));
         out.push(heading(t, i18n::K_VALIDATION, false));
         out.push(match validate::targets(v.text("targets")) {

@@ -16,7 +16,7 @@ Tudo no terminal, em português, no estilo lazygit.
 
 **[🐧 Instalar no Linux](#linux) &nbsp;·&nbsp; [🪟 Instalar no Windows](#windows) &nbsp;·&nbsp; [🍎 macOS](#macos)**
 
-[Ver em ação](#veja-funcionando) · [Uso](#uso-em-4-passos) · [Atalhos](#atalhos) · [Segurança](#segurança-modelo-de-ameaças-resumido) · [Contribuir](#como-contribuir)
+[Ver em ação](#veja-funcionando) · [Uso](#uso-passo-a-passo) · [Atalhos](#atalhos) · [Segurança](#segurança-modelo-de-ameaças-resumido) · [Contribuir](#como-contribuir)
 
 <img src="docs/media/fluxo.gif" alt="nscope escaneando scanme.nmap.org: alvo, perfil, comando explicado, execução e resultados" width="800">
 
@@ -83,7 +83,7 @@ nmap --version
 nscope
 ```
 
-Para scans que pedem root (SYN, UDP, detecção de SO), rode `sudo "$(command -v nscope)"`. O `command -v` é necessário porque o `sudo` não enxerga o `~/.cargo/bin` no PATH.
+Ao abrir, o nscope pede a senha do sudo para liberar os scans que exigem root (SYN, UDP, detecção de SO). Para abrir como usuário comum, use `nscope --sem-sudo`.
 
 ### Windows
 
@@ -149,7 +149,7 @@ cargo install --git https://github.com/PirataZang/nscope --locked   # 4. nscope
 nscope
 ```
 
-Com privilégios: `sudo "$(command -v nscope)"`.
+O nscope pede a senha do sudo ao abrir; `nscope --sem-sudo` pula essa etapa.
 
 ### Atualizar e desinstalar
 
@@ -200,18 +200,26 @@ Expand-Archive nscope.zip -DestinationPath .
 
 ### Privilégios (sudo / administrador)
 
-Várias técnicas (SYN `-sS`, UDP `-sU`, detecção de SO `-O`...) exigem root ou administrador. O nscope nunca se eleva sozinho: ele detecta o nível atual, mostra na barra de título e bloqueia a execução com uma mensagem clara quando falta privilégio.
+Várias técnicas (SYN `-sS`, UDP `-sU`, detecção de SO `-O`...) exigem root ou administrador. O nscope detecta o nível atual, mostra na barra de título e bloqueia a execução com uma mensagem clara quando falta privilégio.
 
-- **Linux/macOS:** `sudo "$(command -v nscope)"`.
+- **Linux/macOS:** ao abrir, o nscope se reabre com `sudo` e pede a sua senha. Se você errar a senha ou não tiver sudo, ele abre como usuário comum. `nscope --sem-sudo` pula o pedido. Mesmo rodando como root, o histórico salvo e os arquivos de saída do nmap ficam com o seu usuário como dono.
 - **Windows:** abra o Windows Terminal como administrador e rode `nscope`.
 - Se o seu `nmap` tem *capabilities* (Linux), use *Configurar → Avançado → Modo de privilégios → Assumir administrador*.
 
-## Uso em 4 passos
+## Uso passo a passo
 
-1. **Alvo (`1`)**: digite o que escanear (um IP, um nome, `192.168.0.0/24`...). A validação acontece enquanto você digita.
-2. **Perfis (`2`) ou Configurar (`3`)**: aplique um perfil pronto (★ *Padrão com serviços* é o recomendado para começar) ou ajuste opção por opção. O painel da direita explica a opção selecionada.
-3. **Comando (`4`)**: revise o comando final, o resumo "em palavras simples", a visibilidade estimada e os avisos (`Enter` leva até a opção responsável).
-4. **Execução (`5`)**: `r` executa, `c` cancela. Ao terminar, veja os **Resultados (`6`)**.
+As abas seguem a ordem de uso. Aperte o número para ir direto a cada uma.
+
+| Aba | O que fazer |
+|---|---|
+| **1 Alvo** | Digite o que escanear (um IP, um nome, `192.168.0.0/24`...). A validação aparece logo abaixo do valor. |
+| **2 Perfis** | Aplique uma receita pronta. ★ *Padrão com serviços* é a recomendada para começar. |
+| **3 Configurar** | Ajuste opção por opção, se quiser. O painel da direita explica a opção selecionada. |
+| **4 Comando** | Revise o comando final, o resumo "na prática", a visibilidade estimada e os avisos (`Enter` leva até a opção responsável). |
+| **5 Editar** | Opcional: aperte `Enter`, apague com `Ctrl+U` e digite ou cole qualquer comando do nmap. Cada parte é explicada embaixo enquanto você digita, e as outras abas passam a refletir o comando novo. `Enter` aplica, `Esc` desfaz. |
+| **6 Execução** | `r` executa, `c` cancela. A saída do nmap aparece ao vivo. |
+| **7 Resultados** | Cada execução da sessão fica na lista *Execuções*: escolha uma com `←` e `↑` `↓` para ver os hosts e portas dela. `s` salva o histórico inteiro (veja abaixo). |
+| **8 Ajuda** | Tópicos à esquerda (atalhos, estados de porta, glossário, instalação), conteúdo à direita. |
 
 Para abrir um XML que você já tem: `nscope --open scan.xml`. Para só imprimir um comando: `nscope --print-command --profile "Scan rápido" --target 192.0.2.10`. Todas as opções de linha de comando: `nscope --help`.
 
@@ -221,11 +229,12 @@ Para abrir um XML que você já tem: `nscope --open scan.xml`. Para só imprimir
 |---|---|
 | **Todo comando é explicado** | Para cada opção: o que faz, quando usar e o cuidado. Cada pedaço do comando final tem uma explicação ao lado. |
 | **Comando sempre visível** | Barra fixa e colorida, com cópia por tecla (`y`). |
-| **Avisos antes de rodar** | Privilégio, conflito, escopo e risco aparecem **antes** de executar. Alvo fora de rede privada exige confirmação (padrão *Não*). |
+| **Cole o seu comando** | A aba Editar aceita qualquer comando do nmap e explica parte por parte. |
+| **Avisos antes de rodar** | Privilégio, conflito, escopo e risco aparecem **antes** de executar. Alvo fora de rede privada ganha um aviso na aba Alvo. |
 | **~110 opções** | Cada uma em sua tela, 16 perfis prontos e um campo livre para qualquer flag nova ou rara. Veja o [catálogo](docs/CATALOGO.md). |
 | **Teclado primeiro, mouse opcional** | Funciona com `NO_COLOR` e em terminais de 16 cores. |
 | **Busca global** | `/` encontra qualquer opção por nome, flag ou descrição e leva até ela. |
-| **Relatório em Markdown** | `s` salva o resultado, sem sobrescrever arquivos existentes. |
+| **Histórico da sessão** | Toda execução fica guardada enquanto o nscope está aberto. `s` salva tudo numa pasta organizada, sem sobrescrever nada. |
 | **Funciona sem o nmap** | A interface monta e explica comandos e diz como instalar o nmap. Nunca inventa resultado. |
 
 ## Como funciona
@@ -234,9 +243,10 @@ Para abrir um XML que você já tem: `nscope --open scan.xml`. Para só imprimir
 flowchart LR
     A["🎯 Alvo"] --> B["📦 Perfil ou<br/>⚙️ Configurar"]
     B --> C["🔍 Comando<br/>explicado + avisos"]
+    H["✏️ Editar<br/>comando digitado"] --> C
     C -->|"r"| D["▶️ Execução<br/>progresso ao vivo"]
     D --> E["📊 Resultados<br/>hosts · portas · riscos"]
-    E -->|"s"| F["📝 Relatório .md"]
+    E -->|"s"| F["📁 Histórico salvo<br/>.md · .xml · saída"]
     C -.->|"y"| G["📋 Copiar comando"]
 ```
 
@@ -246,20 +256,20 @@ Por baixo, o nscope chama `nmap` com uma lista de argumentos (nunca por um shell
 
 | Tecla | Ação |
 |---|---|
-| `Tab` / `Shift+Tab`, `1`–`7` | trocar aba principal |
+| `Tab` / `Shift+Tab`, `1`–`8` | trocar aba principal |
 | `←` `→` ou `[` `]` | sub-aba (Configurar) / painel (Resultados) |
 | `↑` `↓` ou `j` `k` | mover seleção / rolar |
 | `Enter` / `Espaço` | ligar-desligar, trocar valor, editar texto |
 | `Shift+Enter` ou `-` | valor anterior em opções de escolha |
-| `Del` | limpar a opção (volta ao padrão) |
+| `Del` / `Backspace` | limpar a opção (volta ao padrão) |
 | `/` | busca global: filtra qualquer opção por nome, flag ou descrição e salta até ela |
 | `r` / `c` | executar / cancelar |
 | `y` | copiar o comando (OSC 52, com mensagem de fallback) |
-| `o` / `s` | Resultados: só portas abertas / salvar relatório Markdown |
+| `o` / `s` | Resultados: só portas abertas / salvar o histórico de execuções |
 | `?` | Ajuda |
 | `q` / `Ctrl+C` | sair (encerra o scan em andamento) |
 
-Na edição de texto: `Enter` confirma, `Esc` cancela e restaura, o comando atualiza enquanto você digita.
+Na edição de texto: `Enter` confirma, `Esc` cancela e restaura, `Backspace` / `Del` apagam um caractere, `Ctrl+U` apaga tudo. O comando atualiza enquanto você digita.
 Mouse (opcional): clique em abas, sub-abas e linhas.
 
 ## Veja funcionando
@@ -288,7 +298,7 @@ Cada opção diz **o que faz, quando usar e o cuidado**. O comando muda na hora,
 
 ### 3. Segurança antes de executar
 
-Avisos de privilégio, conflitos e risco aparecem **antes** de rodar. Alvo fora da sua rede abre uma confirmação cujo padrão é **Não**. Neste vídeo o `8.8.8.8` só é digitado: a confirmação é cancelada e nada vai para a rede.
+Avisos de privilégio, conflitos e risco aparecem **antes** de rodar. Neste vídeo (gravado numa versão anterior, que ainda pedia confirmação para alvos externos) o `8.8.8.8` só é digitado e nada vai para a rede.
 
 <div align="center">
 <img src="docs/media/seguranca.gif" alt="Avisos e confirmação de autorização" width="800">
@@ -315,7 +325,7 @@ Avisos de privilégio, conflitos e risco aparecem **antes** de rodar. Alvo fora 
 **Configurar → Portas** (lista à esquerda, "O que isso faz" à direita):
 ```text
  nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+ 1 Alvo 2 Perfis 3 Config 4 Comando 5 Editar 6 Execução 7 Resultados 8 Ajuda
  Descoberta  Técnica  Portas  Serviços e SO•1  Scripts  Tempo  Evasão  Saída•1 ›
 ┌ Portas ────────────────────────────┐┌ O que isso faz ────────────────────────┐
 │[ ] Quais portas escanear     Padrão││Quais portas escanear                   │
@@ -340,47 +350,75 @@ $ nmap -sV -oA relatorio scanme.nmap.org
  ↑↓ mover  ←→ sub-aba  Enter ligar/editar  Del limpar  Tab abas  / buscar
 ```
 
-**Comando** (comando final, palavras simples, ruído estimado, cada pedaço e avisos):
+**Comando** (resumo, cada pedaço explicado e avisos):
 ```text
  nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
-┌ Comando final ───────────────────────────────────────────────────────────────┐
-│$ nmap -sV -oA relatorio scanme.nmap.org                                      │
-│Em palavras simples: Vai examinar scanme.nmap.org, usando a técnica padrão    │
-│(SYN com administrador, conexão completa sem). Testa as 1000 portas mais      │
-│comuns. Identifica o serviço e a versão de cada porta aberta. Salva o         │
-│resultado em: -oA relatorio.                                                  │
-│Visibilidade estimada (didática): ███░░ alta (1000 portas, detecção de versão)│
-│                                                                              │
+ 1 Alvo 2 Perfis 3 Config 4 Comando 5 Editar 6 Execução 7 Resultados 8 Ajuda
+┌ Resumo ──────────────────────────────────────────────────────────────────────┐
+│Comando       $ nmap -sV -oA relatorio scanme.nmap.org                        │
+│Na prática    Vai examinar scanme.nmap.org, usando a técnica padrão (SYN com  │
+│              administrador, conexão completa sem). Testa as 1000 portas mais │
+│              comuns. Identifica o serviço e a versão de cada porta aberta.   │
+│              Salva o resultado em: -oA relatorio.                            │
+│Visibilidade  ███░░ alta · 1000 portas, detecção de versão                    │
+│Situação      ✔ Pronto para executar (r).                                     │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌ Cada pedaço do comando ────────────────┐┌ Avisos e problemas (0) ────────────┐
-│nmap  o programa que faz o scan         ││✔ Nenhum problema encontrado. O     │
-│-sV  Além de saber que a porta está     ││comando está pronto para executar   │
-│aberta, pergunta ao serviço quem ele é: ││(r).                                │
-│"nginx 1.18" em vez de só "http".       ││                                    │
-│Essencial para achar software           ││                                    │
-│desatualizado.                          ││                                    │
-│-oA relatorio  Salva em texto, XML e    ││                                    │
-│grepável de uma vez, usando o nome-base ││                                    │
-└────────────────────────────────────────┘└────────────────────────────────────┘
+┌ Cada pedaço do comando ──────────────────┐┌ Avisos e problemas ──────────────┐
+│nmap             o programa que faz o scan││✔ Nenhum problema encontrado. O   │
+│-sV              Além de saber que a porta││comando está pronto para executar │
+│                 está aberta, pergunta ao ││(r).                              │
+│                 serviço quem ele é:      ││                                  │
+│                 "nginx 1.18" em vez de só││                                  │
+│                 "http". Essencial para   ││                                  │
+│                 achar software           ││                                  │
+│                 desatualizado.           ││                                  │
+└──────────────────────────────────────────┘└──────────────────────────────────┘
  Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
 $ nmap -sV -oA relatorio scanme.nmap.org
- ↑↓ avisos  Enter ir à opção  y copiar  Tab abas  / buscar  r executar
+ ↑↓ avisos  Enter ir à opção  PgUp/PgDn rolar pedaços  Tab abas  / buscar
 ```
 
-**Resultados** (hosts · portas · detalhes):
+**Editar** (comando digitado à mão, explicado parte por parte):
 ```text
  nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+ 1 Alvo 2 Perfis 3 Config 4 Comando✘ 5 Editar 6 Execução 7 Resultados 8 Ajuda
+┌ Comando (editando) ──────────────────────────────────────────────────────────┐
+│$ nmap scanme.nmap.org -sU --flag-nova=2                                      │
+│                                                                              │
+│✔ Comando entendido. Enter aplica · Esc desfaz tudo                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ O que este comando faz (↑↓ rola) ────────────────────────────────────────────┐
+│CADA PARTE DO COMANDO                                                         │
+│nmap             o programa que faz o scan                                    │
+│-sU              Testa portas UDP (DNS 53, SNMP 161, DHCP, NTP...). Pode ser  │
+│                 combinado com uma técnica TCP. Sozinho, escaneia só UDP.     │
+│--flag-nova=2    Opção que o nscope não explica: vai para o nmap do jeito que │
+│                 foi digitada (campo Flags extras).                           │
+│scanme.nmap.org  Alvo: o endereço, nome ou rede que será examinado.           │
+│                                                                              │
+│AVISOS E PROBLEMAS · 1 ERRO                                                   │
+│✘ Escanear também UDP (-sU) exige privilégios de administrador. Rode o nscope │
+│  com sudo (ou, no Windows, como administrador) ou escolha outra opção.       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sU --flag-nova=2 scanme.nmap.org
+ Enter aplicar  Esc desfazer  ←→ Home End mover  Ctrl+U apagar tudo
+```
+
+**Resultados** (execuções · hosts · portas · detalhes):
+```text
+ nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
+ 1 Alvo 2 Perfis 3 Config 4 Comando 5 Editar 6 Execução 7 Resultados 8 Ajuda
  3 hosts (2 ligados) · 14.5 s · nmap -sV -O --traceroute 192.0.2.0/24
- ☐ só abertas (o) · s salva relatório Markdown
-┌ Hosts ─────────────────┐┌ Portas ◂ ──────────────────────────────────────────┐
-│● 192.0.2.10 serv… 2 ab.││PORTA    ESTADO         SERVIÇO       VERSÃO        │
-│● 192.0.2.20       1 ab.││22/tcp   open           ssh           OpenSSH 8.9p1…│
-│○ 192.0.2.30       0 ab.││443/tcp  open           http          nginx 1.18.0  │
-│                        ││3306/tcp filtered       mysql                       │
-│                        ││123/udp  open|filtered  ntp                         │
-│                        ││Não exibidas: 995 portas closed (resets)            │
+ ☐ só abertas (o) · s salva o histórico (1 execução) em /home/voce/projetos
+┌ Execuções (1) ─────────┐┌ Portas ◂ ──────────────────────────────────────────┐
+│ 1 12:30 ◇ -sV -O --tra…││PORTA    ESTADO         SERVIÇO       VERSÃO        │
+└────────────────────────┘│22/tcp   open           ssh           OpenSSH 8.9p1…│
+┌ Hosts ─────────────────┐│443/tcp  open           http          nginx 1.18.0  │
+│● 192.0.2.10 serv… 2 ab.││3306/tcp filtered       mysql                       │
+│● 192.0.2.20       1 ab.││123/udp  open|filtered  ntp                         │
+│○ 192.0.2.30       0 ab.││Não exibidas: 995 portas closed (resets)            │
 │                        ││                                                    │
 │                        │└────────────────────────────────────────────────────┘
 │                        │┌ Detalhes ──────────────────────────────────────────┐
@@ -393,7 +431,7 @@ $ nmap -sV -oA relatorio scanme.nmap.org
 └────────────────────────┘└────────────────────────────────────────────────────┘
  Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
 $ nmap -sV -oA relatorio scanme.nmap.org
- ↑↓ mover  ←→ painel  o só abertas  s salvar  Tab abas  / buscar  r executar
+ ↑↓ mover  ←→ painel  o só abertas  s salvar histórico  Tab abas  / buscar
 ```
 
 </details>
@@ -402,12 +440,13 @@ $ nmap -sV -oA relatorio scanme.nmap.org
 
 ## Recursos
 
-- 7 telas: Alvo · Perfis · Configurar (Descoberta · Técnica · Portas · Serviços e SO · Scripts · Tempo · Evasão · Saída · Avançado) · Comando · Execução · Resultados · Ajuda.
+- 8 telas: Alvo · Perfis · Configurar (Descoberta · Técnica · Portas · Serviços e SO · Scripts · Tempo · Evasão · Saída · Avançado) · Comando · Editar · Execução · Resultados · Ajuda.
+- Aba Editar: lê um comando do nmap digitado ou colado (sem shell), converte nas opções do nscope e explica cada parte. Flags desconhecidas vão para o campo de flags extras.
 - 16 perfis prontos (descobrir hosts, padrão com serviços, vulnerabilidades, discreto, UDP, firewall, web, SMB, IPv6, relatórios...).
 - Navegador de scripts NSE (categorias e scripts populares, com marcação de risco).
 - Análise antes de executar: erros (bloqueiam), avisos e informações; opções que exigem admin viram erro com "rode com sudo".
 - Resultados do XML: hosts, portas (cores por estado, "Não exibidas: N portas closed"), SO, rota, scripts e uma base local de portas comuns com nível de atenção.
-- Relatório Markdown (`s`), criado sem sobrescrever arquivos existentes.
+- Histórico de execuções da sessão. `s` em Resultados salva uma pasta `nscope-historico-<data>/` na pasta onde o terminal foi aberto, com `README.md` (índice com hora, comando, situação, hosts e portas de cada execução) e, por execução, o relatório `.md`, o XML do nmap (reabre com `nscope --open`) e a saída em texto. Nada é sobrescrito.
 - Terminal sempre restaurado (também em pânico e `Ctrl+C`); temporários sempre removidos.
 
 ## Segurança (modelo de ameaças resumido)
@@ -418,7 +457,7 @@ Detalhes e política de divulgação em [SECURITY.md](SECURITY.md).
 - **Texto da rede nunca altera o terminal**: banners, hostnames e saída de scripts são sanitizados (ESC e controles viram `·`; bidi e largura zero neutralizados), com testes.
 - **Temporários** em diretório `0700` único, removidos ao terminar/cancelar/sair/falhar.
 - **Limites**: XML ≤ 64 MiB, linhas lidas ≤ 8 KiB, 5000 linhas de log em memória.
-- **Autorização**: confirmação explícita para alvos fora de redes privadas (padrão *Não*).
+- **Autorização**: alvos fora de redes privadas ganham um aviso na aba Alvo. A responsabilidade de ter autorização é de quem executa.
 - **Não protege**: o próprio nmap/NSE, a autorização legal, um sistema já comprometido, `SIGKILL`.
 
 ## Dependências

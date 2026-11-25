@@ -166,6 +166,8 @@ pub struct Runner {
     pub outcome: Option<Outcome>,
     /// Resultado do XML (só depois de terminar, sem standalone): `Err` = mensagem para o usuário.
     pub result: Option<Result<ScanResult, String>>,
+    /// XML bruto do nmap (guardado para o histórico salvo poder ser reaberto com --open).
+    pub xml: Option<String>,
 }
 
 fn reader<R: Read>(r: R, tx: SyncSender<Msg>, is_err: bool) {
@@ -263,6 +265,7 @@ impl Runner {
             progress: None,
             outcome: None,
             result: None,
+            xml: None,
         })
     }
 
@@ -344,6 +347,12 @@ impl Runner {
                     Err("O nmap terminou sem gerar o arquivo XML de resultados.".to_string())
                 }
             });
+            if matches!(self.result, Some(Ok(_))) {
+                self.xml = self
+                    .xml_path
+                    .as_deref()
+                    .and_then(|p| std::fs::read_to_string(p).ok());
+            }
         }
         if matches!(outcome, Outcome::Cancelled) {
             self.progress = None;

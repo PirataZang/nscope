@@ -15,6 +15,7 @@ USO:
   nscope --print-command [--profile NOME] [--target ALVO]
                                  imprime o comando montado (sem executar)
   nscope --print-catalog         imprime a referência de opções (Markdown)
+  nscope --sem-sudo              abre sem pedir a senha do sudo (Linux/macOS)
   nscope --version | --help
 
 Use apenas em sistemas seus ou com autorização por escrito.";
@@ -42,6 +43,7 @@ fn parse_args(args: &[String]) -> Cli {
                 None => return Cli::Exit("--open precisa do caminho de um arquivo XML.".into(), 2),
             },
             "--print-command" => print = true,
+            "--sem-sudo" => {} // tratado em elevate()
             "--print-catalog" => return Cli::Exit(nscope::nmap::catalog::to_markdown(), 0),
             "--profile" => profile = it.next().cloned(),
             "--target" => target = it.next().cloned(),
@@ -72,6 +74,38 @@ fn print_command(profile: Option<String>, target: Option<String>) -> Result<Stri
         return Err(e.msg.clone());
     }
     Ok(command::display(&command::build(&v)))
+}
+
+/// Em Linux/macOS, reabre o nscope com sudo para liberar SYN, UDP e detecção de SO.
+/// Só retorna se não der para elevar (sem sudo, senha errada): aí segue como usuário comum.
+#[cfg(unix)]
+fn elevate(args: &[String]) {
+    use std::os::unix::process::CommandExt;
+    use std::process::Command;
+    let interactive = std::io::stdin().is_terminal() && std::io::stdout().is_terminal();
+    if !interactive || args.iter().any(|a| a == "--sem-sudo") || util::is_privileged() {
+        return;
+    }
+    let Ok(exe) = std::env::current_exe() else {
+        return;
+    };
+    eprintln!("nscope: pedindo sudo para os scans que exigem root (use --sem-sudo para pular).");
+    if !Command::new("sudo")
+        .arg("-v")
+        .status()
+        .is_ok_and(|s| s.success())
+    {
+        eprintln!("nscope: sem sudo, seguindo como usuário comum.");
+        return;
+    }
+    // --sem-sudo no filho evita laço se ele ainda não se enxergar como root.
+    let err = Command::new("sudo")
+        .arg("--")
+        .arg(exe)
+        .args(args)
+        .arg("--sem-sudo")
+        .exec();
+    eprintln!("nscope: não deu para reabrir com sudo ({err}), seguindo como usuário comum.");
 }
 
 fn run_tui(open: Option<PathBuf>) -> Result<(), String> {
@@ -146,13 +180,17 @@ fn main() {
                 2
             }
         },
-        Cli::Tui(open) => match run_tui(open) {
-            Ok(()) => 0,
-            Err(e) => {
-                eprintln!("{e}");
-                1
+        Cli::Tui(open) => {
+            #[cfg(unix)]
+            elevate(&args);
+            match run_tui(open) {
+                Ok(()) => 0,
+                Err(e) => {
+                    eprintln!("{e}");
+                    1
+                }
             }
-        },
+        }
     };
     std::process::exit(code);
 }

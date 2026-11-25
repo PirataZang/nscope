@@ -22,21 +22,137 @@ fn state_style(app: &App, st: &str) -> Style {
     }
 }
 
+/// Histórico de execuções da sessão: uma linha por execução, a escolhida em destaque.
+fn draw_runs(f: &mut Frame, app: &mut App, area: Rect) {
+    let t = app.theme;
+    let focus = app.pane == Pane::Runs;
+    f.render_widget(
+        block(
+            &t,
+            &format!(
+                "Execuções ({}){}",
+                app.history.len(),
+                if focus { " ◂" } else { "" }
+            ),
+        ),
+        area,
+    );
+    let i = inner(area);
+    let w = i.width as usize;
+    let off =
+        super::widgets::list::scroll_offset(0, app.hist_i, i.height as usize, app.history.len());
+    let mut lines = Vec::new();
+    for (n, e) in app
+        .history
+        .iter()
+        .enumerate()
+        .skip(off)
+        .take(i.height as usize)
+    {
+        app.hits.push((
+            Rect {
+                x: i.x,
+                y: i.y + (n - off) as u16,
+                width: i.width,
+                height: 1,
+            },
+            Hit::Exec(n),
+        ));
+        let (icon, st) = if e.status == "concluído" {
+            ("✔", t.ok())
+        } else if e.status == "cancelado" {
+            ("■", t.warn())
+        } else if e.status.starts_with("falhou") {
+            ("✘", t.err())
+        } else if e.status.starts_with("aberto") {
+            ("◇", t.accent())
+        } else {
+            ("⚠", t.warn())
+        };
+        let clock = e.clock();
+        let cmd = e.command.strip_prefix("nmap ").unwrap_or(&e.command);
+        let txt = truncate(
+            &format!("{:>2} {} {icon} {cmd}", n + 1, clock.get(..5).unwrap_or("")),
+            w,
+        );
+        let cur = n == app.hist_i;
+        lines.push(if cur && focus {
+            let pad = w.saturating_sub(txt.width());
+            Line::styled(format!("{txt}{}", " ".repeat(pad)), t.selected())
+        } else if cur {
+            Line::styled(txt, t.accent())
+        } else {
+            Line::from(vec![Span::styled(
+                txt,
+                if icon == "✔" { t.normal() } else { st },
+            )])
+        });
+    }
+    f.render_widget(Paragraph::new(lines), i);
+}
+
 pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
     let t = app.theme;
-    let Some(res) = app.result.clone() else {
+    if app.history.is_empty() && app.result.is_none() {
         f.render_widget(block(&t, "Resultados"), area);
         f.render_widget(
             Paragraph::new(crate::i18n::NO_RESULTS).wrap(Wrap { trim: false }),
             inner(area),
         );
         return;
-    };
+    }
+    let warn = app.result.as_ref().is_some_and(|r| !r.warnings.is_empty());
     let [head, rest] = Layout::vertical([
-        Constraint::Length(if res.warnings.is_empty() { 2 } else { 3 }),
+        Constraint::Length(if warn { 3 } else { 2 }),
         Constraint::Min(5),
     ])
     .areas(area);
+    let [left, right] =
+        Layout::horizontal([Constraint::Percentage(32), Constraint::Min(30)]).areas(rest);
+    let hosts = if app.history.is_empty() {
+        left
+    } else {
+        let h = (app.history.len() as u16 + 2).min((left.height / 3).max(4));
+        let [runs, hosts] =
+            Layout::vertical([Constraint::Length(h), Constraint::Min(3)]).areas(left);
+        draw_runs(f, app, runs);
+        hosts
+    };
+    let n = app.history.len();
+    let save_hint = format!(
+        "· s salva o histórico ({n} execuç{}) em {}",
+        if n == 1 { "ão" } else { "ões" },
+        app.save_dir.display()
+    );
+    let Some(res) = app.result.clone() else {
+        // execução sem resultado (cancelada, falhou, só informação)
+        let e = &app.history[app.hist_i.min(n - 1)];
+        let msg = vec![
+            Line::from(vec![
+                Span::styled(format!(" Execução {} · ", app.hist_i + 1), t.normal()),
+                Span::styled(truncate(&e.command, head.width as usize / 2), t.dim()),
+            ]),
+            Line::styled(
+                truncate(&format!(" {save_hint}"), head.width as usize),
+                t.dim(),
+            ),
+        ];
+        f.render_widget(Paragraph::new(msg), head);
+        f.render_widget(block(&t, "Hosts"), hosts);
+        f.render_widget(block(&t, "Resultado"), right);
+        f.render_widget(
+            Paragraph::new(vec![
+                Line::styled(format!("Esta execução terminou como: {}.", e.status), t.warn()),
+                Line::raw(""),
+                Line::raw("Ela não gerou hosts nem portas. A saída do nmap fica guardada no histórico e vai junto quando você salvar (s)."),
+                Line::raw(""),
+                Line::styled("← escolha outra execução na lista", t.dim()),
+            ])
+            .wrap(Wrap { trim: false }),
+            inner(right),
+        );
+        return;
+    };
     let dur = res
         .duration_secs
         .map_or(String::new(), |d| format!(" · {d:.1} s"));
@@ -64,7 +180,10 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
                 },
                 t.accent(),
             ),
-            Span::styled("· s salva relatório Markdown", t.dim()),
+            Span::styled(
+                truncate(&save_hint, (head.width as usize).saturating_sub(20)),
+                t.dim(),
+            ),
         ]),
     ];
     if let Some(w) = res.warnings.first() {
@@ -75,8 +194,6 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
     }
     f.render_widget(Paragraph::new(hl), head);
 
-    let [hosts, right] =
-        Layout::horizontal([Constraint::Percentage(32), Constraint::Min(30)]).areas(rest);
     let [ports, det] =
         Layout::vertical([Constraint::Percentage(50), Constraint::Percentage(50)]).areas(right);
 

@@ -1,0 +1,28 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
+ 1 Alvo 2 Perfis 3 Config 4 Comando✘ 5 Editar 6 Execução 7 Resultados 8 Ajuda
+┌ Comando (editando) ──────────────────────────────────────────────────────────┐
+│$ nmap scanme.nmap.org -sU --flag-nova=2                                      │
+│                                                                              │
+│✔ Comando entendido. Enter aplica · Esc desfaz tudo                           │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ O que este comando faz (↑↓ rola) ────────────────────────────────────────────┐
+│CADA PARTE DO COMANDO                                                         │
+│nmap             o programa que faz o scan                                    │
+│-sU              Testa portas UDP (DNS 53, SNMP 161, DHCP, NTP...). Pode ser  │
+│                 combinado com uma técnica TCP. Sozinho, escaneia só UDP.     │
+│--flag-nova=2    Opção que o nscope não explica: vai para o nmap do jeito que │
+│                 foi digitada (campo Flags extras).                           │
+│scanme.nmap.org  Alvo: o endereço, nome ou rede que será examinado.           │
+│                                                                              │
+│AVISOS E PROBLEMAS · 1 ERRO                                                   │
+│✘ Escanear também UDP (-sU) exige privilégios de administrador. Rode o nscope │
+│  com sudo (ou, no Windows, como administrador) ou escolha outra opção.       │
+│                                                                              │
+└──────────────────────────────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sU --flag-nova=2 scanme.nmap.org
+ Enter aplicar  Esc desfazer  ←→ Home End mover  Ctrl+U apagar tudo

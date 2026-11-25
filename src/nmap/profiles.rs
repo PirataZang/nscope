@@ -183,6 +183,17 @@ pub fn apply(p: &Profile, current: &Values) -> Values {
     v
 }
 
+/// Perfil em uso: o primeiro cujas opções batem exatamente com as atuais.
+/// "Restaurar padrão" (o primeiro) é uma ação, não um perfil, e nunca aparece como em uso.
+pub fn active(current: &Values) -> Option<usize> {
+    PROFILES
+        .iter()
+        .enumerate()
+        .skip(1)
+        .find(|(_, p)| apply(p, current) == *current)
+        .map(|(i, _)| i)
+}
+
 pub fn find(name: &str) -> Option<&'static Profile> {
     let n = name.to_lowercase();
     PROFILES

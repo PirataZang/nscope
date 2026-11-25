@@ -164,7 +164,7 @@ def configurar(d):
 
 
 def seguranca(d):
-    """Avisos antes de executar e confirmação de autorização (nada é escaneado)."""
+    """Avisos antes de executar e aviso de alvo externo (nada é escaneado)."""
     d.wait(1.0)
     d.caption("Segurança na frente: o nscope confere antes de executar")
     d.wait(2.0)
@@ -187,21 +187,24 @@ def seguranca(d):
     d.wait(0.4)
     d.key("enter")  # desliga o UDP de novo
     d.wait(0.6)
-    d.caption("Alvo fora da sua rede? Ele pede confirmação")
+    d.caption("Alvo fora da sua rede? A aba Alvo avisa")
     d.click_text("Alvo", dur=0.9)
     d.key("enter")
     apagar(d, 20)
     d.type("8.8.8.8", cps=7)
     d.key("enter")
     d.wait(0.8)
-    d.key("r", hold=1.0)
-    ponto(d, "confirmacao")
-    d.focus(50, 9, 80, dur=1.3)
-    d.caption("O padrão é NÃO: só segue se você declarar que tem autorização")
+    ponto(d, "aviso alvo externo")
+    d.focus(50, 5, 80, dur=1.3)
+    d.caption("Só escaneie com autorização: aqui nada é executado (sem r)")
     d.wait(4.0)
-    d.key("esc", hold=1.0)
+    # volta ao alvo de prática para nenhum r posterior ir para a rede de terceiros
+    d.key("enter")
+    apagar(d, 20)
+    d.type("scanme.nmap.org", cps=10)
+    d.key("enter")
     d.focus(50, 14, 104, dur=1.1)
-    d.caption("Cancelado: nada foi enviado à rede")
+    d.caption("Nada foi enviado à rede")
     d.wait(2.6)
 
 
@@ -209,7 +212,7 @@ def capturas(d):
     """Uma imagem estática por aba, para a galeria do README."""
     out = {}
     d.wait(1.0)
-    for tecla, nome in [("1", "alvo"), ("2", "perfis"), ("3", "configurar"), ("4", "comando"), ("7", "ajuda")]:
+    for tecla, nome in [("1", "alvo"), ("2", "perfis"), ("3", "configurar"), ("4", "comando"), ("8", "ajuda")]:
         d.key(tecla, hold=0.6, show=False)
         out[nome] = len(d.frames) - 1
     return out

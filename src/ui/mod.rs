@@ -1,6 +1,7 @@
 //! Desenho da interface (ratatui). Só lê o `App`; o único efeito é registrar regiões clicáveis.
 
 pub mod command;
+pub mod editor;
 pub mod help;
 pub mod options;
 pub mod profiles;
@@ -107,6 +108,77 @@ pub fn command_lines(t: &Theme, tokens: &[Token], width: usize) -> Vec<Line<'sta
         w += 1 + tw;
     }
     lines.into_iter().map(Line::from).collect()
+}
+
+/// Quebra pedaços coloridos em linhas de até `width` colunas, sem perder a cor de cada palavra.
+pub fn wrap_spans(spans: &[Span<'static>], width: usize) -> Vec<Vec<Span<'static>>> {
+    let width = width.max(1);
+    let mut out: Vec<Vec<Span<'static>>> = vec![vec![]];
+    let mut w = 0usize;
+    for sp in spans {
+        for (n, word) in sp.content.split(' ').enumerate() {
+            let ww = word.width();
+            let space = usize::from(n > 0 || w > 0);
+            if w > 0 && w + space + ww > width {
+                out.push(vec![]);
+                w = 0;
+            }
+            let line = out.last_mut().expect("sempre há uma linha");
+            let text = if w > 0 && n > 0 {
+                format!(" {word}")
+            } else {
+                word.to_string()
+            };
+            w += text.width();
+            if !text.is_empty() {
+                line.push(Span::styled(text, sp.style));
+            }
+        }
+    }
+    out
+}
+
+/// Tabela de duas colunas: chave à esquerda (largura fixa) e texto quebrado, alinhado à direita.
+/// Quando a coluna de texto ficaria estreita demais, a chave vai em uma linha e o texto embaixo, recuado.
+pub fn kv_lines(
+    rows: &[(Vec<Span<'static>>, Vec<Span<'static>>)],
+    width: usize,
+    key_max: usize,
+) -> Vec<Line<'static>> {
+    let span_w = |v: &Vec<Span>| v.iter().map(|s| s.content.width()).sum::<usize>();
+    let key_w = rows
+        .iter()
+        .map(|(k, _)| span_w(k))
+        .max()
+        .unwrap_or(0)
+        .min(key_max);
+    let col = key_w + 2;
+    let stacked = width < col + 24;
+    let mut out = Vec::new();
+    for (k, v) in rows {
+        let kw = span_w(k);
+        if stacked || kw > key_w {
+            out.push(Line::from(k.clone()));
+            for l in wrap_spans(v, width.saturating_sub(2)) {
+                let mut l2 = vec![Span::raw("  ")];
+                l2.extend(l);
+                out.push(Line::from(l2));
+            }
+            continue;
+        }
+        for (n, l) in wrap_spans(v, width - col).into_iter().enumerate() {
+            let mut line = if n == 0 {
+                let mut x = k.clone();
+                x.push(Span::raw(" ".repeat(col - kw)));
+                x
+            } else {
+                vec![Span::raw(" ".repeat(col))]
+            };
+            line.extend(l);
+            out.push(Line::from(line));
+        }
+    }
+    out
 }
 
 /// Abas em uma linha, com janela horizontal para manter a selecionada visível. Registra cliques.
@@ -238,7 +310,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
 
     // abas
     let errs = findings.iter().filter(|x| x.level == Level::Error).count();
-    let items: Vec<String> = i18n::TABS
+    let full: Vec<String> = i18n::TABS
         .iter()
         .enumerate()
         .map(|(i, n)| {
@@ -249,6 +321,19 @@ pub fn draw(f: &mut Frame, app: &mut App) {
             }
         })
         .collect();
+    // em terminais estreitos: nomes curtos e um espaço só entre as abas
+    let items = if full.iter().map(|s| s.width()).sum::<usize>() <= tabs.width as usize {
+        full
+    } else {
+        i18n::TABS_SHORT
+            .iter()
+            .enumerate()
+            .map(|(i, n)| {
+                let e = if i == 3 && errs > 0 { "✘" } else { "" };
+                format!(" {} {n}{e}", i + 1)
+            })
+            .collect()
+    };
     tab_strip(
         f,
         app,
@@ -286,6 +371,7 @@ pub fn draw(f: &mut Frame, app: &mut App) {
         Tab::Perfis => profiles::draw(f, app, body),
         Tab::Configurar => options::draw(f, app, body),
         Tab::Comando => command::draw(f, app, body, &tokens, &findings),
+        Tab::Editar => editor::draw(f, app, body, &tokens, &findings),
         Tab::Execucao => run::draw(f, app, body),
         Tab::Resultados => results::draw(f, app, body),
         Tab::Ajuda => help::draw(f, app, body),
@@ -336,9 +422,6 @@ pub fn draw(f: &mut Frame, app: &mut App) {
     if app.search.is_some() {
         draw_search(f, app, area);
     }
-    if app.confirm.is_some() {
-        draw_confirm(f, app, area);
-    }
 }
 
 fn draw_footer(f: &mut Frame, app: &App, area: Rect) {
@@ -360,6 +443,8 @@ fn draw_footer(f: &mut Frame, app: &App, area: Rect) {
     }
     let hints: Vec<(&str, &str)> = if app.edit.is_some() {
         i18n::FOOTER_EDIT.to_vec()
+    } else if app.cmd_edit.is_some() {
+        i18n::FOOTER_CMD_EDIT.to_vec()
     } else {
         i18n::footer(app.tab.index())
     };
@@ -444,63 +529,6 @@ fn draw_search(f: &mut Frame, app: &App, area: Rect) {
     );
 }
 
-fn draw_confirm(f: &mut Frame, app: &App, area: Rect) {
-    let t = app.theme;
-    let Some(c) = &app.confirm else { return };
-    let shown: Vec<String> = c.targets.iter().take(4).cloned().collect();
-    let more = c.targets.len().saturating_sub(4);
-    let h = 10 + shown.len() as u16 + u16::from(more > 0);
-    let r = centered(area, 70.min(area.width), h);
-    f.render_widget(Clear, r);
-    f.render_widget(
-        Block::bordered()
-            .border_style(t.warn())
-            .title(Span::styled(format!(" {} ", i18n::CONFIRM_TITLE), t.warn())),
-        r,
-    );
-    let i = inner(r);
-    let mut lines = vec![
-        Line::from(Span::styled(i18n::CONFIRM_ASK, t.bold())),
-        Line::raw(""),
-    ];
-    for s in shown {
-        lines.push(Line::from(vec![
-            Span::raw("  • "),
-            Span::styled(s, t.value()),
-        ]));
-    }
-    if more > 0 {
-        lines.push(Line::from(Span::styled(
-            format!("  … e mais {more}"),
-            t.dim(),
-        )));
-    }
-    lines.push(Line::raw(""));
-    lines.push(Line::from(Span::styled(i18n::CONFIRM_NOTE, t.dim())));
-    lines.push(Line::raw(""));
-    let (no, yes) = (
-        format!("  {}  ", i18n::CONFIRM_NO),
-        format!("  {}  ", i18n::CONFIRM_YES),
-    );
-    lines.push(Line::from(vec![
-        Span::styled(no, if c.yes { t.normal() } else { t.selected() }),
-        Span::raw("   "),
-        Span::styled(
-            yes,
-            if c.yes {
-                t.warn().add_modifier(Modifier::REVERSED)
-            } else {
-                t.normal()
-            },
-        ),
-    ]));
-    lines.push(Line::from(Span::styled(
-        "←→ escolher · Enter confirmar · Esc cancela",
-        t.dim(),
-    )));
-    f.render_widget(Paragraph::new(lines).wrap(Wrap { trim: false }), i);
-}
-
 #[cfg(test)]
 pub mod tests {
     use super::*;
@@ -579,7 +607,9 @@ pub mod tests {
                 }
             }
             Tab::Resultados => {
-                a.result = Some(xml::parse(include_str!("../../fixtures/basico.xml")).unwrap());
+                a.open_result(xml::parse(include_str!("../../fixtures/basico.xml")).unwrap());
+                a.history[0].when = "2026-11-25_12-30-05".into();
+                a.save_dir = "/home/voce/projetos".into();
                 press(&mut a, ratatui::crossterm::event::KeyCode::Right);
             }
             _ => {}
@@ -599,6 +629,22 @@ pub mod tests {
     }
 
     #[test]
+    fn editar_mostra_o_comando_em_edicao_e_os_problemas() {
+        use ratatui::crossterm::event::KeyCode;
+        let mut a = test_app();
+        press(&mut a, KeyCode::Char('5'));
+        press(&mut a, KeyCode::Enter);
+        for c in " -sU --flag-nova=2".chars() {
+            press(&mut a, KeyCode::Char(c));
+        }
+        let out = render(&mut a, 80, 24);
+        insta::assert_snapshot!("editar_editando_80x24", out);
+        press(&mut a, KeyCode::Char('|'));
+        let out = render(&mut a, 80, 24);
+        assert!(out.contains("não é aceito"), "{out}");
+    }
+
+    #[test]
     fn terminal_pequeno_mostra_mensagem() {
         let mut a = test_app();
         let out = render(&mut a, 60, 20);
@@ -615,22 +661,13 @@ pub mod tests {
     }
 
     #[test]
-    fn busca_e_confirmacao_aparecem_como_janelas() {
+    fn busca_aparece_como_janela_e_alvo_externo_nao_pede_confirmacao() {
         let mut a = test_app();
         press(&mut a, ratatui::crossterm::event::KeyCode::Char('/'));
         press(&mut a, ratatui::crossterm::event::KeyCode::Char('u'));
         press(&mut a, ratatui::crossterm::event::KeyCode::Char('d'));
         let out = render(&mut a, 80, 24);
         insta::assert_snapshot!("busca_80x24", out);
-        let mut b = test_app();
-        b.values.set("targets", "8.8.8.8 1.1.1.1");
-        press(&mut b, ratatui::crossterm::event::KeyCode::Char('r'));
-        let out = render(&mut b, 80, 24);
-        assert!(
-            out.contains("Você tem autorização para escanear estes alvos?")
-                && out.contains("8.8.8.8")
-        );
-        insta::assert_snapshot!("confirmacao_80x24", out);
     }
 
     #[test]

@@ -3,16 +3,16 @@ source: src/ui/mod.rs
 expression: out
 ---
  nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+ 1 Alvo 2 Perfis 3 Config 4 Comando 5 Editar 6 Execução 7 Resultados 8 Ajuda
  3 hosts (2 ligados) · 14.5 s · nmap -sV -O --traceroute 192.0.2.0/24
- ☐ só abertas (o) · s salva relatório Markdown
-┌ Hosts ─────────────────┐┌ Portas ◂ ──────────────────────────────────────────┐
-│● 192.0.2.10 serv… 2 ab.││PORTA    ESTADO         SERVIÇO       VERSÃO        │
-│● 192.0.2.20       1 ab.││22/tcp   open           ssh           OpenSSH 8.9p1…│
-│○ 192.0.2.30       0 ab.││443/tcp  open           http          nginx 1.18.0  │
-│                        ││3306/tcp filtered       mysql                       │
-│                        ││123/udp  open|filtered  ntp                         │
-│                        ││Não exibidas: 995 portas closed (resets)            │
+ ☐ só abertas (o) · s salva o histórico (1 execução) em /home/voce/projetos
+┌ Execuções (1) ─────────┐┌ Portas ◂ ──────────────────────────────────────────┐
+│ 1 12:30 ◇ -sV -O --tra…││PORTA    ESTADO         SERVIÇO       VERSÃO        │
+└────────────────────────┘│22/tcp   open           ssh           OpenSSH 8.9p1…│
+┌ Hosts ─────────────────┐│443/tcp  open           http          nginx 1.18.0  │
+│● 192.0.2.10 serv… 2 ab.││3306/tcp filtered       mysql                       │
+│● 192.0.2.20       1 ab.││123/udp  open|filtered  ntp                         │
+│○ 192.0.2.30       0 ab.││Não exibidas: 995 portas closed (resets)            │
 │                        ││                                                    │
 │                        │└────────────────────────────────────────────────────┘
 │                        │┌ Detalhes ──────────────────────────────────────────┐
@@ -25,4 +25,4 @@ expression: out
 └────────────────────────┘└────────────────────────────────────────────────────┘
  Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
 $ nmap -sV -oA relatorio scanme.nmap.org
- ↑↓ mover  ←→ painel  o só abertas  s salvar  Tab abas  / buscar  r executar
+ ↑↓ mover  ←→ painel  o só abertas  s salvar histórico  Tab abas  / buscar

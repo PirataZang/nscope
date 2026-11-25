@@ -109,33 +109,142 @@ pub fn render(r: &ScanResult) -> String {
     o
 }
 
-/// Salva em `dir`, escolhendo um nome livre (`relatorio-nscope.md`, `-2`, `-3`...).
-pub fn save(r: &ScanResult, dir: &Path) -> std::io::Result<PathBuf> {
-    let text = render(r);
+/// Uma execução da sessão, guardada em memória até o usuário salvar o histórico.
+#[derive(Clone, Debug)]
+pub struct Execution {
+    /// Data e hora do início (`2026-11-25_12-30-05`).
+    pub when: String,
+    pub command: String,
+    /// Situação em palavras: "concluído", "cancelado", "falhou: ...".
+    pub status: String,
+    pub secs: u64,
+    pub result: Option<ScanResult>,
+    pub xml: Option<String>,
+    /// Saída do nmap como apareceu na aba Execução.
+    pub log: Vec<String>,
+}
+
+impl Execution {
+    /// `12:30:05`
+    pub fn clock(&self) -> String {
+        self.when.get(11..).unwrap_or("").replace('-', ":")
+    }
+    pub fn open_ports(&self) -> usize {
+        self.result
+            .as_ref()
+            .map_or(0, |r| r.hosts.iter().map(|h| h.open_count()).sum())
+    }
+}
+
+/// Cria o arquivo sem sobrescrever nada (`create_new`) e devolve ao usuário do sudo.
+fn write_new(path: &Path, text: &str) -> std::io::Result<()> {
+    let mut f = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)?;
+    f.write_all(text.as_bytes())?;
+    crate::util::give_back(path);
+    Ok(())
+}
+
+fn execution_md(n: usize, e: &Execution) -> String {
+    let head = format!(
+        "> Execução {n} · {} às {} · {} · {} s\n\n",
+        e.when.get(..10).unwrap_or(""),
+        e.clock(),
+        cell(&e.status),
+        e.secs
+    );
+    match &e.result {
+        Some(r) => {
+            let body = render(r);
+            body.replacen("\n\n", &format!("\n\n{head}"), 1)
+        }
+        None => format!(
+            "# Execução {n}\n\n{head}## Comando\n\n```\n{}\n```\n\nEsta execução não gerou resultados. A saída do nmap está no arquivo `-saida.txt` ao lado.\n",
+            e.command.replace("```", "'''")
+        ),
+    }
+}
+
+/// Salva todas as execuções numa pasta nova dentro de `dir`:
+/// `nscope-historico-<data>/` com `README.md` (índice) e, por execução, relatório `.md`,
+/// XML do nmap (`.xml`, reabre com `nscope --open`) e a saída em texto (`-saida.txt`).
+pub fn save_history(list: &[Execution], dir: &Path, stamp: &str) -> std::io::Result<PathBuf> {
+    let mut folder = None;
     for n in 1..100 {
         let name = if n == 1 {
-            "relatorio-nscope.md".to_string()
+            format!("nscope-historico-{stamp}")
         } else {
-            format!("relatorio-nscope-{n}.md")
+            format!("nscope-historico-{stamp}-{n}")
         };
-        let path = dir.join(name);
-        match std::fs::OpenOptions::new()
-            .write(true)
-            .create_new(true)
-            .open(&path)
-        {
-            Ok(mut f) => {
-                f.write_all(text.as_bytes())?;
-                return Ok(path);
+        let p = dir.join(name);
+        match std::fs::create_dir(&p) {
+            Ok(()) => {
+                folder = Some(p);
+                break;
             }
             Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => continue,
             Err(e) => return Err(e),
         }
     }
-    Err(std::io::Error::new(
-        std::io::ErrorKind::AlreadyExists,
-        "já existem relatórios demais nesta pasta",
-    ))
+    let folder = folder.ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::AlreadyExists,
+            "já existem pastas de histórico demais com este nome",
+        )
+    })?;
+    crate::util::give_back(&folder);
+
+    let mut idx = String::from("# Histórico de execuções do nscope\n\n");
+    idx.push_str(&format!(
+        "> Salvo em {} às {}. {} {}. Use apenas com autorização.\n\n",
+        stamp.get(..10).unwrap_or(""),
+        stamp.get(11..).unwrap_or("").replace('-', ":"),
+        list.len(),
+        if list.len() == 1 {
+            "execução"
+        } else {
+            "execuções"
+        }
+    ));
+    idx.push_str("| # | Hora | Comando | Situação | Hosts ligados | Portas abertas | Arquivos |\n");
+    idx.push_str("|---|---|---|---|---|---|---|\n");
+    for (i, e) in list.iter().enumerate() {
+        let n = i + 1;
+        let base = format!("{n:02}_{}", e.when.get(11..).unwrap_or("execucao"));
+        write_new(&folder.join(format!("{base}.md")), &execution_md(n, e))?;
+        let mut files = vec![format!("[relatório]({base}.md)")];
+        if let Some(x) = &e.xml {
+            write_new(&folder.join(format!("{base}.xml")), x)?;
+            files.push(format!("[XML]({base}.xml)"));
+        }
+        if !e.log.is_empty() {
+            let mut log = e.log.join("\n");
+            log.push('\n');
+            write_new(&folder.join(format!("{base}-saida.txt")), &log)?;
+            files.push(format!("[saída]({base}-saida.txt)"));
+        }
+        let hosts = e.result.as_ref().map_or("-".to_string(), |r| {
+            format!(
+                "{} de {}",
+                r.hosts_up,
+                r.hosts_total.max(r.hosts.len() as u32)
+            )
+        });
+        idx.push_str(&format!(
+            "| {n} | {} | `{}` | {} ({} s) | {hosts} | {} | {} |\n",
+            e.clock(),
+            cell(&e.command),
+            cell(&e.status),
+            e.secs,
+            e.open_ports(),
+            files.join(" · ")
+        ));
+    }
+    idx.push_str("\nPara reabrir um resultado no nscope: `nscope --open <arquivo>.xml`.\n");
+    write_new(&folder.join("README.md"), &idx)?;
+    Ok(folder)
 }
 
 #[cfg(test)]
@@ -169,23 +278,50 @@ mod tests {
         assert!(!md.contains("x ``` y"));
     }
 
-    #[test]
-    fn nao_sobrescreve_nem_segue_symlink() {
-        let dir = std::env::temp_dir().join(format!("nscope-report-{}", std::process::id()));
-        std::fs::create_dir_all(&dir).unwrap();
-        let a = save(&sample(), &dir).unwrap();
-        let b = save(&sample(), &dir).unwrap();
-        assert_ne!(a, b);
-        assert!(b.to_string_lossy().ends_with("-2.md"));
-        #[cfg(unix)]
-        {
-            let alvo = dir.join("alvo-secreto.txt");
-            std::fs::write(&alvo, "original").unwrap();
-            std::os::unix::fs::symlink(&alvo, dir.join("relatorio-nscope-3.md")).unwrap();
-            let c = save(&sample(), &dir).unwrap();
-            assert!(c.to_string_lossy().ends_with("-4.md"));
-            assert_eq!(std::fs::read_to_string(&alvo).unwrap(), "original");
+    fn exec(result: Option<ScanResult>, status: &str) -> Execution {
+        Execution {
+            when: "2026-11-25_12-30-05".into(),
+            command: "nmap -sV 192.0.2.0/24".into(),
+            status: status.into(),
+            secs: 14,
+            xml: result.as_ref().map(|_| "<nmaprun/>".into()),
+            result,
+            log: vec!["Starting Nmap".into()],
         }
+    }
+
+    #[test]
+    fn historico_vira_pasta_organizada_sem_sobrescrever() {
+        let dir = std::env::temp_dir().join(format!("nscope-hist-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let list = [exec(Some(sample()), "concluído"), exec(None, "cancelado")];
+        let a = save_history(&list, &dir, "2026-11-25_12-40-00").unwrap();
+        let b = save_history(&list, &dir, "2026-11-25_12-40-00").unwrap();
+        assert!(a.ends_with("nscope-historico-2026-11-25_12-40-00"));
+        assert!(b.to_string_lossy().ends_with("-2"));
+        let idx = std::fs::read_to_string(a.join("README.md")).unwrap();
+        assert!(
+            idx.contains(
+                "| 1 | 12:30:05 | `nmap -sV 192.0.2.0/24` | concluído (14 s) | 2 de 3 | 3 |"
+            ),
+            "{idx}"
+        );
+        assert!(idx.contains("| 2 | 12:30:05 |") && idx.contains("cancelado"));
+        assert!(a.join("01_12-30-05.xml").exists() && !a.join("02_12-30-05.xml").exists());
+        assert!(
+            std::fs::read_to_string(a.join("02_12-30-05.md"))
+                .unwrap()
+                .contains("não gerou resultados")
+        );
+        assert!(
+            std::fs::read_to_string(a.join("01_12-30-05.md"))
+                .unwrap()
+                .contains("> Execução 1")
+        );
+        assert_eq!(
+            std::fs::read_to_string(a.join("01_12-30-05-saida.txt")).unwrap(),
+            "Starting Nmap\n"
+        );
         std::fs::remove_dir_all(&dir).unwrap();
     }
 }

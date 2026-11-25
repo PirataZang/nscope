@@ -27,7 +27,7 @@ Regra de dependência: `nmap::*` (exceto `runner`) não importa nada de `app`/`u
 
 1. `Values` (editado pela UI) → `command::build` → tokens. A barra de comando e a aba Comando usam os mesmos tokens.
 2. `r` → `analyze` com os privilégios detectados. **Erro ⇒ não executa**, vai para a aba Comando.
-3. `analyze::external_targets` ⇒ janela de confirmação (padrão Não).
+3. `analyze::external_targets` ⇒ aviso na aba Alvo (sem janela de confirmação).
 4. `Plan::from_values` → `Runner::start`: `Command::new("nmap")` com argumentos em lista, `stdin` nulo; o nscope **antecipa** `--stats-every 1s` (se o usuário não definiu) e `-oX <tmp>/scan.xml` (se não definiu `-oX`/`-oA`).
 5. Duas threads leem stdout/stderr (`read_until` com limite de 8 KiB, `from_utf8_lossy`, `util::clean`) e enviam por um canal limitado.
 6. A cada tick (~100 ms) `App::tick` chama `Runner::poll`, que devolve as linhas novas e atualiza o progresso (`About 23.40% done ... (0:00:12 remaining)`).

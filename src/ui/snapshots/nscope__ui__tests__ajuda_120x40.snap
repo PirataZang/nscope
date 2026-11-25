@@ -3,42 +3,42 @@ source: src/ui/mod.rs
 expression: out
 ---
  nscope · TUI do nmap · nmap 7.95                                                            Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
-┌ Ajuda ───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│COMO USAR EM 4 PASSOS                                                                                                 │
-│1. Alvo (1): diga o que escanear: um IP, um nome ou uma rede.                                                         │
-│2. Perfis (2) ou Configurar (3): escolha um perfil pronto ou ajuste opção por opção. Cada opção explica o que faz,    │
-│quando usar e o que cuidar.                                                                                           │
-│3. Comando (4): revise o comando final. Cada pedaço é explicado e os avisos aparecem aqui, antes de executar.         │
-│4. Execução (5): pressione r e acompanhe. Depois veja os Resultados (6).                                              │
-│                                                                                                                      │
-│ATALHOS                                                                                                               │
-│Tab / Shift+Tab, 1–7: trocar de aba principal                                                                         │
-│← →  ou  [ ]: trocar sub-aba (Configurar) ou painel (Resultados)                                                      │
-│↑ ↓  ou  j k: mover a seleção / rolar                                                                                 │
-│Enter / Espaço: ligar ou desligar, trocar valor, editar texto                                                         │
-│Shift+Enter ou -: valor anterior em opções de escolha                                                                 │
-│Del: limpar a opção (volta ao padrão)                                                                                 │
-│/: buscar qualquer opção por nome, flag ou descrição                                                                  │
-│r  /  c: executar / cancelar                                                                                          │
-│y: copiar o comando (OSC 52)                                                                                          │
-│o  /  s: em Resultados: só portas abertas / salvar relatório Markdown                                                 │
-│?: esta tela                                                                                                          │
-│q  /  Ctrl+C: sair (encerra o scan em andamento)                                                                      │
-│Mouse: clique em abas, sub-abas e linhas (opcional)                                                                   │
-│                                                                                                                      │
-│ESTADOS DE PORTA                                                                                                      │
-│open: há um serviço escutando e aceitando conexões                                                                    │
-│closed: a porta responde, mas nenhum serviço está escutando                                                           │
-│filtered: um firewall bloqueia: o nmap não consegue saber se está aberta                                              │
-│unfiltered: acessível, mas sem saber se aberta ou fechada (típico do ACK scan)                                        │
-│open|filtered: não dá para distinguir entre aberta e filtrada (comum em UDP, Null/FIN/Xmas)                           │
-│closed|filtered: não dá para distinguir entre fechada e filtrada (típico do idle scan)                                │
-│                                                                                                                      │
-│QUAL TÉCNICA ESCOLHER?                                                                                                │
-│Não sei: deixe em Automático: com administrador usa SYN, sem usa conexão completa                                     │
-│Só ver quem está ligado: -sn (Só descobrir hosts)                                                                     │
-└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Editar  6 Execução  7 Resultados  8 Ajuda
+┌ Tópicos ────────────────┐┌ Primeiros passos ─────────────────────────────────────────────────────────────────────────┐
+│ Primeiros passos        ││O caminho normal é ir da aba 1 até a 7, nesta ordem:                                       │
+│ Atalhos de teclado      ││                                                                                           │
+│ Estados de porta        ││1 Alvo        diga o que escanear: um IP, um nome ou uma rede.                             │
+│ Qual técnica escolher   ││2 Perfis      escolha uma receita pronta. ★ Padrão com serviços é um bom começo.           │
+│ Privilégios             ││3 Configurar  ajuste opção por opção, se quiser. Cada uma explica o que faz, quando usar e │
+│ Glossário               ││              o cuidado.                                                                   │
+│ Uso responsável         ││4 Comando     revise o comando final. Cada pedaço é explicado e os avisos aparecem antes de│
+│ Instalar o nmap         ││              executar.                                                                    │
+│                         ││5 Editar      opcional: digite ou cole um comando do nmap e veja a explicação de cada      │
+│                         ││              parte.                                                                       │
+│                         ││6 Execução    pressione r e acompanhe a saída do nmap.                                     │
+│                         ││7 Resultados  navegue pelos hosts e portas encontrados.                                    │
+│                         ││                                                                                           │
+│                         ││O comando montado fica sempre visível na barra de baixo, em qualquer aba.                  │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+│                         ││                                                                                           │
+└─────────────────────────┘└───────────────────────────────────────────────────────────────────────────────────────────┘
  Comando final ─────────────────────────────────────────────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
 $ nmap -sV -oA relatorio scanme.nmap.org
- ↑↓ rolar  Tab abas  / buscar  r executar  y copiar  ? ajuda  q sair
+ ↑↓ tópico  PgUp/PgDn rolar  Tab abas  / buscar  r executar  y copiar  ? ajuda  q sair

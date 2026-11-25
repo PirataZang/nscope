@@ -1,7 +1,7 @@
-//! Tela Execução: status, barra de progresso, saída do nmap com rolagem e cores.
+//! Tela Execução: situação, progresso, comando e botões em uma tabela; saída do nmap com rolagem e cores.
 
 use super::widgets::progress;
-use super::{block, inner};
+use super::{block, inner, kv_lines};
 use crate::app::{App, Hit, LogKind, RunState};
 use crate::i18n;
 use ratatui::Frame;
@@ -12,43 +12,32 @@ use unicode_width::UnicodeWidthStr;
 
 pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
     let t = app.theme;
-    let [top, logbox] = Layout::vertical([Constraint::Length(7), Constraint::Min(4)]).areas(area);
-    f.render_widget(block(&t, "Andamento"), top);
-    let i = inner(top);
-    let status = match &app.run_state {
-        RunState::Idle => Line::from(vec![
-            Span::styled("● ", t.warn()),
-            Span::raw(i18n::RUN_IDLE),
-        ]),
-        RunState::Running => Line::from(vec![
-            Span::styled("● ", t.ok()),
-            Span::raw(i18n::RUN_RUNNING),
-        ]),
-        RunState::Cancelled => Line::from(vec![
-            Span::styled("● ", t.warn()),
-            Span::raw(i18n::RUN_CANCELLED),
-        ]),
-        RunState::Done => Line::from(vec![
+    let i = inner(area);
+    let secs = app.elapsed().as_secs();
+    let status: Vec<Span> = match &app.run_state {
+        RunState::Idle => vec![Span::styled("● ", t.warn()), Span::raw(i18n::RUN_IDLE)],
+        RunState::Running => vec![Span::styled("● ", t.ok()), Span::raw(i18n::RUN_RUNNING)],
+        RunState::Cancelled => vec![Span::styled("● ", t.warn()), Span::raw(i18n::RUN_CANCELLED)],
+        RunState::Done => vec![
             Span::styled("✔ ", t.ok()),
             Span::raw(if app.result.is_some() && !app.run_standalone {
-                "Concluído. Veja os Resultados (6)."
+                format!(
+                    "Concluído em {}. Veja os Resultados (7).",
+                    progress::mmss(secs)
+                )
             } else {
-                i18n::RUN_DONE
+                i18n::RUN_DONE.to_string()
             }),
-        ]),
-        RunState::Failed(e) => Line::from(vec![
-            Span::styled("✘ ", t.err()),
-            Span::styled(e.clone(), t.err()),
-        ]),
+        ],
+        RunState::Failed(e) => vec![Span::styled(format!("✘ {e}"), t.err())],
     };
-    let secs = app.elapsed().as_secs();
-    let width = (i.width as usize).saturating_sub(44).clamp(10, 40);
+    let width = (i.width as usize).saturating_sub(44).clamp(10, 50);
     let bar = match (&app.run_progress, &app.run_state) {
         (Some(p), RunState::Running | RunState::Cancelled) => {
             let rem = p
                 .remaining
                 .as_deref()
-                .map_or(String::new(), |r| format!("  restam {r}"));
+                .map_or(String::new(), |r| format!(" · restam {r}"));
             format!("{}{rem}", progress::bar(p.percent, width, secs))
         }
         (_, RunState::Done) if !app.run_standalone => progress::bar(100.0, width, secs),
@@ -56,43 +45,68 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
         _ => progress::bar(0.0, width, secs),
     };
     let cmd = if app.run_command.is_empty() {
-        String::new()
+        app.command_text()
     } else {
-        crate::util::truncate(&app.run_command, i.width as usize - 2)
+        app.run_command.clone()
     };
+    let cmd_label = if app.run_command.is_empty() {
+        "Vai rodar"
+    } else {
+        "Comando"
+    };
+    let rows = vec![
+        (vec![Span::styled("Situação", t.dim())], status),
+        (
+            vec![Span::styled("Progresso", t.dim())],
+            vec![Span::styled(bar, t.value())],
+        ),
+        (
+            vec![Span::styled(cmd_label, t.dim())],
+            vec![Span::styled(
+                crate::util::truncate(&format!("$ {cmd}"), (i.width as usize).saturating_sub(11)),
+                t.normal(),
+            )],
+        ),
+    ];
+    let mut lines = kv_lines(&rows, i.width as usize, 9);
+    let by = i.y + lines.len() as u16;
     let btn_run = " ▶ Executar (r) ";
     let btn_cancel = " ■ Cancelar (c) ";
-    let lines = vec![
-        status,
-        Line::raw(""),
-        Line::styled(bar, t.value()),
-        Line::styled(format!("$ {cmd}"), t.dim()),
-        Line::raw(""),
-        Line::from(vec![
-            Span::styled(
-                btn_run,
-                if app.is_running() {
-                    t.dim()
-                } else {
-                    t.tab_on()
-                },
-            ),
-            Span::raw(" "),
-            Span::styled(
-                btn_cancel,
-                if app.is_running() {
-                    t.selected()
-                } else {
-                    t.dim()
-                },
-            ),
-        ]),
-    ];
-    f.render_widget(Paragraph::new(lines), i);
-    let by = i.y + 5;
+    let pad = " ".repeat(11);
+    lines.push(Line::from(vec![
+        Span::raw(pad.clone()),
+        Span::styled(
+            btn_run,
+            if app.is_running() {
+                t.dim()
+            } else {
+                t.tab_on()
+            },
+        ),
+        Span::raw("  "),
+        Span::styled(
+            btn_cancel,
+            if app.is_running() {
+                t.selected()
+            } else {
+                t.dim()
+            },
+        ),
+    ]));
+    let top_h = (lines.len() as u16 + 2).min(area.height / 2);
+    let [top, logbox] =
+        Layout::vertical([Constraint::Length(top_h), Constraint::Min(4)]).areas(area);
+    let border = match app.run_state {
+        RunState::Running => t.ok(),
+        RunState::Failed(_) => t.err(),
+        _ => t.border(),
+    };
+    f.render_widget(block(&t, "Andamento").border_style(border), top);
+    f.render_widget(Paragraph::new(lines), inner(top));
+    let x0 = i.x + pad.width() as u16;
     app.hits.push((
         Rect {
-            x: i.x,
+            x: x0,
             y: by,
             width: btn_run.width() as u16,
             height: 1,
@@ -101,7 +115,7 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
     ));
     app.hits.push((
         Rect {
-            x: i.x + btn_run.width() as u16 + 1,
+            x: x0 + btn_run.width() as u16 + 2,
             y: by,
             width: btn_cancel.width() as u16,
             height: 1,
@@ -109,12 +123,22 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
         Hit::Cancel,
     ));
 
-    let title = if app.log_back > 0 {
-        "Saída do nmap (rolada; End volta ao fim)"
-    } else {
-        "Saída do nmap"
-    };
-    f.render_widget(block(&t, title), logbox);
+    let opened = app.log.iter().filter(|l| l.kind == LogKind::Open).count();
+    let mut title = format!("Saída do nmap · {} linhas", app.log.len());
+    if opened > 0 {
+        title.push_str(&format!(
+            " · {opened} {}",
+            if opened == 1 {
+                "porta aberta"
+            } else {
+                "portas abertas"
+            }
+        ));
+    }
+    if app.log_back > 0 {
+        title.push_str(" · rolada (End volta ao fim)");
+    }
+    f.render_widget(block(&t, &title), logbox);
     let li = inner(logbox);
     if app.log.is_empty() {
         let msg = match &app.env.nmap {

@@ -155,7 +155,7 @@ fn emit(v: &Values, o: &'static Opt, out: &mut Vec<Token>) {
                             o,
                             vec![t.clone()],
                             vec![(quote(&t), class)],
-                            "Flag extra digitada por você no campo livre.",
+                            "Opção que o nscope não explica: vai para o nmap do jeito que foi digitada (campo Flags extras).",
                             false,
                         ));
                     }
@@ -194,6 +194,106 @@ pub fn argv(tokens: &[Token]) -> Option<Vec<String>> {
         return None;
     }
     Some(tokens.iter().flat_map(|t| t.argv.iter().cloned()).collect())
+}
+
+/// Caminho inverso de `build`: lê um comando digitado (`nmap -sV alvo`) e devolve os valores.
+/// Flags que o catálogo não conhece vão para o campo de flags extras; o resto vira alvo.
+/// Só separa as palavras (regras de shell): nada é executado.
+pub fn parse(s: &str) -> Result<Values, String> {
+    if let Some(c) = s.chars().find(|c| ";&|\\$<>()`".contains(*c)) {
+        return Err(format!(
+            "o caractere \"{c}\" não é aceito: aqui não há shell. Digite só o nmap e as opções dele."
+        ));
+    }
+    let mut words =
+        shell_words::split(s).map_err(|_| "aspas abertas ou mal fechadas.".to_string())?;
+    if words.first().is_some_and(|w| w == "sudo") {
+        words.remove(0);
+    }
+    if words.first().is_some_and(|w| {
+        let base = w.rsplit(['/', '\\']).next().unwrap_or(w);
+        base.eq_ignore_ascii_case("nmap") || base.eq_ignore_ascii_case("nmap.exe")
+    }) {
+        words.remove(0);
+    }
+    let mut v = Values::default();
+    let (mut targets, mut extra) = (Vec::new(), Vec::new());
+    let opts: Vec<&'static Opt> = catalog::all().iter().filter(|o| !o.helper).collect();
+    let mut i = 0;
+    while i < words.len() {
+        let w = words[i].as_str();
+        let next = words.get(i + 1).map(String::as_str);
+        i += 1;
+        // 1) flag exata (liga-desliga, escolha, ou flag seguida do valor)
+        let mut done = false;
+        for o in &opts {
+            match o.kind {
+                Kind::Bool if w == o.flag => v.set(o.id, "1"),
+                Kind::Choice => {
+                    let Some(c) = o.choices.iter().find(|c| !c.flag.is_empty() && c.flag == w)
+                    else {
+                        continue;
+                    };
+                    v.set(o.id, c.id);
+                    if let (Some(a), Some(n)) = (c.arg_from, next) {
+                        v.set(a, n);
+                        i += 1;
+                    }
+                }
+                Kind::Text | Kind::Number
+                    if w == o.flag && matches!(o.fmt, Fmt::Sep | Fmt::Eq | Fmt::Cat) =>
+                {
+                    let Some(n) = next else { continue };
+                    v.set(o.id, n);
+                    i += 1;
+                }
+                _ => continue,
+            }
+            done = true;
+            break;
+        }
+        if done {
+            continue;
+        }
+        // 2) flag com o valor colado: --script=vuln, -PS22,80, -p22 (a flag mais longa vence)
+        // candidatos: (flag, formato, opção que recebe o valor, escolha a ligar)
+        let glued =
+            opts.iter()
+                .flat_map(|o| {
+                    let own = matches!(o.kind, Kind::Text | Kind::Number)
+                        .then_some((o.flag, o.fmt, o.id, None));
+                    let from_choice = o.choices.iter().filter_map(move |c| {
+                        Some((c.flag, Fmt::Sep, c.arg_from?, Some((o.id, c.id))))
+                    });
+                    own.into_iter().chain(from_choice)
+                })
+                .filter(|(flag, ..)| !flag.is_empty())
+                .filter_map(|(flag, fmt, id, choice)| {
+                    let rest = w.strip_prefix(flag)?;
+                    let val = match fmt {
+                        Fmt::Cat => rest,
+                        Fmt::Eq => rest.strip_prefix('=')?,
+                        Fmt::Sep if flag.starts_with("--") => rest.strip_prefix('=')?,
+                        Fmt::Sep if flag.len() == 2 => rest,
+                        _ => return None,
+                    };
+                    (!val.is_empty()).then_some((flag.len(), id, choice, val))
+                })
+                .max_by_key(|(len, ..)| *len);
+        if let Some((_, id, choice, val)) = glued {
+            if let Some((o, c)) = choice {
+                v.set(o, c);
+            }
+            v.set(id, val);
+        } else if w.starts_with('-') {
+            extra.push(quote(w));
+        } else {
+            targets.push(w.to_string());
+        }
+    }
+    v.set("targets", targets.join(" "));
+    v.set("extra", extra.join(" "));
+    Ok(v)
 }
 
 /// Parágrafo em português simples descrevendo o scan.
@@ -475,6 +575,66 @@ mod tests {
         );
         v.set("V", "1");
         assert!(describe(&v).contains("só mostra informações"));
+    }
+
+    #[test]
+    fn ler_comando_digitado() {
+        let v = parse("sudo /usr/bin/nmap -sV -p22,80 --script=vuln -T4 192.0.2.1 a.test").unwrap();
+        assert_eq!(
+            display(&build(&v)),
+            display(&build(
+                &parse("nmap -sV -p 22,80 --script vuln -T4 192.0.2.1 a.test").unwrap()
+            ))
+        );
+        assert_eq!(v.text("targets"), "192.0.2.1 a.test");
+        assert!(v.flag("sV"));
+        // flag desconhecida vai para o campo livre, sem sumir
+        let v = parse("nmap --flag-nova=1 192.0.2.1").unwrap();
+        assert_eq!(v.text("extra"), "--flag-nova=1");
+        assert!(parse("nmap 192.0.2.1; rm -rf /").is_err());
+        assert!(parse("nmap 'aberta").is_err());
+        assert_eq!(parse("").unwrap().text("targets"), "");
+    }
+
+    #[test]
+    fn comando_de_cada_perfil_e_opcao_volta_igual_ao_ser_lido() {
+        use crate::nmap::catalog::{Kind, all};
+        use crate::nmap::profiles::{PROFILES, apply};
+        let mut base = Values::default();
+        base.set("targets", "192.0.2.1");
+        let mut cases: Vec<Values> = PROFILES.iter().map(|p| apply(p, &base)).collect();
+        for o in all()
+            .iter()
+            .filter(|o| !o.helper && o.fmt != Fmt::Positional)
+        {
+            match o.kind {
+                Kind::Bool => {
+                    let mut v = base.clone();
+                    v.set(o.id, "1");
+                    cases.push(v);
+                }
+                Kind::Choice => {
+                    for c in o.choices.iter().skip(1) {
+                        let mut v = base.clone();
+                        v.set(o.id, c.id);
+                        if let Some(a) = c.arg_from {
+                            v.set(a, catalog::get(a).unwrap().placeholder);
+                        }
+                        cases.push(v);
+                    }
+                }
+                _ => {
+                    let mut v = base.clone();
+                    v.set(o.id, o.placeholder);
+                    cases.push(v);
+                }
+            }
+        }
+        for v in cases {
+            let shown = display(&build(&v));
+            let back = parse(&shown).unwrap_or_else(|e| panic!("{shown}: {e}"));
+            assert_eq!(display(&build(&back)), shown);
+        }
     }
 
     #[test]

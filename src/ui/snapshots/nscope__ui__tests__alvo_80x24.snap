@@ -3,25 +3,25 @@ source: src/ui/mod.rs
 expression: out
 ---
  nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
-┌ Alvo ──────────────────────────────┐┌ O que isso faz ────────────────────────┐
-│[x] Alvos             scanme.nmap.o…││Alvos                                   │
-│[ ] Lista de alvos em arq… alvos.txt││                                        │
-│[ ] Alvos aleatórios              10││O QUE FAZ                               │
-│[ ] Excluir alvos     192.168.0.1,1…││Quem será escaneado: um IP, um nome de  │
-│[ ] Excluir alvos (arqu… excluir.txt││máquina, uma rede inteira (CIDR) ou uma │
-└────────────────────────────────────┘│faixa. Separe vários alvos com espaço ou│
-┌ Formatos aceitos ──────────────────┐│vírgula.                                │
-│192.168.0.10       um único IP      ││                                        │
-│servidor.local     um nome de       ││QUANDO USAR                             │
-│máquina (DNS)                       ││Sempre, a não ser que você use uma lista│
-│192.168.0.0/24     a rede inteira:  ││em arquivo (-iL) ou alvos aleatórios    │
-│256 endereços                       ││(-iR).                                  │
-│192.168.0.1-50     uma faixa de IPs ││                                        │
-│192.168.0-3.1      octeto variável: ││CUIDADO                                 │
-│quatro redes                        ││Escaneie apenas o que você possui ou tem│
-│10.0.0.5 10.0.0.9  vários alvos,    ││autorização por escrito para testar.    │
-│separados por espaço ou vírgula     ││Para praticar, o projeto Nmap permite   │
+ 1 Alvo 2 Perfis 3 Config 4 Comando 5 Editar 6 Execução 7 Resultados 8 Ajuda
+┌ O que escanear ──────────────────────────────────────────────────────────────┐
+│Alvos  scanme.nmap.org                                                        │
+│✔ 1 alvo válido                                                               │
+│Enter edita · Del limpa · ↓ mais opções de alvo                               │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ Mais opções de alvo (opcional) ────┐┌ O que isso faz ────────────────────────┐
+│[ ] Lista de alvos em arq… alvos.txt││Alvos                                   │
+│[ ] Alvos aleatórios              10││                                        │
+│[ ] Excluir alvos     192.168.0.1,1…││O QUE FAZ                               │
+│[ ] Excluir alvos (arqu… excluir.txt││Quem será escaneado: um IP, um nome de  │
+└────────────────────────────────────┘│máquina, uma rede inteira (CIDR) ou uma │
+┌ Formatos aceitos ──────────────────┐│faixa. Separe vários alvos com espaço ou│
+│192.168.0.10      um único IP       ││vírgula.                                │
+│servidor.local    um nome de máquin…││                                        │
+│192.168.0.0/24    a rede inteira: 2…││QUANDO USAR                             │
+│192.168.0.1-50    uma faixa de IPs  ││Sempre, a não ser que você use uma lista│
+│192.168.0-3.1     octeto variável: …││em arquivo (-iL) ou alvos aleatórios    │
+│10.0.0.5 10.0.0.9 vários alvos, sep…││(-iR).                                  │
 └────────────────────────────────────┘└────────────────────────────────────────┘
  Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
 $ nmap -sV -oA relatorio scanme.nmap.org

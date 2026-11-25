@@ -3,26 +3,26 @@ source: src/ui/mod.rs
 expression: out
 ---
  nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
-┌ Ajuda ───────────────────────────────────────────────────────────────────────┐
-│COMO USAR EM 4 PASSOS                                                         │
-│1. Alvo (1): diga o que escanear: um IP, um nome ou uma rede.                 │
-│2. Perfis (2) ou Configurar (3): escolha um perfil pronto ou ajuste opção por │
-│opção. Cada opção explica o que faz, quando usar e o que cuidar.              │
-│3. Comando (4): revise o comando final. Cada pedaço é explicado e os avisos   │
-│aparecem aqui, antes de executar.                                             │
-│4. Execução (5): pressione r e acompanhe. Depois veja os Resultados (6).      │
-│                                                                              │
-│ATALHOS                                                                       │
-│Tab / Shift+Tab, 1–7: trocar de aba principal                                 │
-│← →  ou  [ ]: trocar sub-aba (Configurar) ou painel (Resultados)              │
-│↑ ↓  ou  j k: mover a seleção / rolar                                         │
-│Enter / Espaço: ligar ou desligar, trocar valor, editar texto                 │
-│Shift+Enter ou -: valor anterior em opções de escolha                         │
-│Del: limpar a opção (volta ao padrão)                                         │
-│/: buscar qualquer opção por nome, flag ou descrição                          │
-│r  /  c: executar / cancelar                                                  │
-└──────────────────────────────────────────────────────────────────────────────┘
+ 1 Alvo 2 Perfis 3 Config 4 Comando 5 Editar 6 Execução 7 Resultados 8 Ajuda
+┌ Tópicos ────────────────┐┌ Primeiros passos (PgDn rola) ─────────────────────┐
+│ Primeiros passos        ││O caminho normal é ir da aba 1 até a 7, nesta      │
+│ Atalhos de teclado      ││ordem:                                             │
+│ Estados de porta        ││                                                   │
+│ Qual técnica escolher   ││1 Alvo        diga o que escanear: um IP, um nome  │
+│ Privilégios             ││              ou uma rede.                         │
+│ Glossário               ││2 Perfis      escolha uma receita pronta. ★ Padrão │
+│ Uso responsável         ││              com serviços é um bom começo.        │
+│ Instalar o nmap         ││3 Configurar  ajuste opção por opção, se quiser.   │
+│                         ││              Cada uma explica o que faz, quando   │
+│                         ││              usar e o cuidado.                    │
+│                         ││4 Comando     revise o comando final. Cada pedaço é│
+│                         ││              explicado e os avisos aparecem antes │
+│                         ││              de executar.                         │
+│                         ││5 Editar      opcional: digite ou cole um comando  │
+│                         ││              do nmap e veja a explicação de cada  │
+│                         ││              parte.                               │
+│                         ││6 Execução    pressione r e acompanhe a saída do   │
+└─────────────────────────┘└───────────────────────────────────────────────────┘
  Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
 $ nmap -sV -oA relatorio scanme.nmap.org
- ↑↓ rolar  Tab abas  / buscar  r executar  y copiar  ? ajuda  q sair
+ ↑↓ tópico  PgUp/PgDn rolar  Tab abas  / buscar  r executar  y copiar  ? ajuda

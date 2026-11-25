@@ -119,7 +119,62 @@ fn execucao_normal_progresso_xml_e_limpeza() {
     assert_eq!(a[2], "-oX");
     assert!(a[3].starts_with(tmp.to_str().unwrap()));
     assert_eq!(a.last().unwrap(), "192.0.2.10");
+    assert!(
+        r.xml.as_deref().is_some_and(|x| x.contains("<nmaprun")),
+        "XML bruto guardado para o histórico"
+    );
     assert!(!tmp.exists(), "temporário deve ser removido ao terminar");
+}
+
+#[test]
+fn cada_execucao_entra_no_historico_e_s_salva_tudo_numa_pasta() {
+    use nscope::app::{App, Env, Tab};
+    use ratatui::crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+    let f = Fake::new("historico", NORMAL);
+    let mut a = App::new(Env {
+        privileged: true,
+        nmap: Ok("Nmap version 7.95".into()),
+        program: f.bin.clone().into_os_string(),
+    });
+    let out = f.dir.join("onde-o-terminal-abriu");
+    std::fs::create_dir_all(&out).unwrap();
+    a.save_dir = out.clone();
+    a.values.set("targets", "8.8.8.8"); // alvo externo: executa direto, sem janela de confirmação
+    for _ in 0..2 {
+        let t0 = Instant::now();
+        a.request_run();
+        assert!(a.is_running(), "deve executar sem pedir confirmação");
+        while a.is_running() {
+            a.tick();
+            assert!(t0.elapsed() < Duration::from_secs(10));
+            std::thread::sleep(Duration::from_millis(10));
+        }
+    }
+    assert_eq!(a.history.len(), 2);
+    assert_eq!(a.hist_i, 1, "a última execução fica selecionada");
+    assert!(
+        a.history
+            .iter()
+            .all(|e| e.status == "concluído" && e.result.is_some())
+    );
+    a.select_run(0);
+    assert!(a.result.is_some());
+    a.set_tab(Tab::Resultados);
+    a.on_key(KeyEvent::new(KeyCode::Char('s'), KeyModifiers::NONE));
+    let dirs: Vec<_> = std::fs::read_dir(&out)
+        .unwrap()
+        .flatten()
+        .map(|d| d.path())
+        .collect();
+    assert_eq!(dirs.len(), 1, "{dirs:?}");
+    let idx = std::fs::read_to_string(dirs[0].join("README.md")).unwrap();
+    assert!(idx.contains("| 1 |") && idx.contains("| 2 |"), "{idx}");
+    let files = std::fs::read_dir(&dirs[0]).unwrap().count();
+    assert_eq!(
+        files,
+        1 + 2 * 3,
+        "índice + (relatório, XML, saída) por execução"
+    );
 }
 
 #[test]

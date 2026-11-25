@@ -9,7 +9,7 @@ use crate::nmap::knowledge::{self, Risk};
 use crate::nmap::profiles::{self, PROFILES};
 use crate::nmap::runner::{self, MAX_LOG_LINES, Outcome, Plan, Runner};
 use crate::nmap::xml::{Port, ScanResult};
-use crate::report;
+use crate::report::{self, Execution};
 use crate::ui::theme::Theme;
 use crate::ui::widgets::input::TextInput;
 use ratatui::crossterm::event::{
@@ -18,6 +18,7 @@ use ratatui::crossterm::event::{
 use ratatui::layout::Rect;
 use std::collections::VecDeque;
 use std::ffi::OsString;
+use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -26,17 +27,19 @@ pub enum Tab {
     Perfis,
     Configurar,
     Comando,
+    Editar,
     Execucao,
     Resultados,
     Ajuda,
 }
 
 impl Tab {
-    pub const ALL: [Tab; 7] = [
+    pub const ALL: [Tab; 8] = [
         Tab::Alvo,
         Tab::Perfis,
         Tab::Configurar,
         Tab::Comando,
+        Tab::Editar,
         Tab::Execucao,
         Tab::Resultados,
         Tab::Ajuda,
@@ -74,15 +77,17 @@ pub struct Edit {
     original: String,
 }
 
+/// Edição do comando inteiro (aba Editar). `original` volta com Esc.
+pub struct CmdEdit {
+    pub input: TextInput,
+    original: Values,
+    /// Problema ao ler o texto atual (o comando mostrado é o último que foi lido sem erro).
+    pub error: Option<String>,
+}
+
 pub struct Search {
     pub input: TextInput,
     pub sel: usize,
-}
-
-pub struct Confirm {
-    pub targets: Vec<String>,
-    /// Padrão: Não.
-    pub yes: bool,
 }
 
 #[derive(Clone, PartialEq, Debug)]
@@ -109,6 +114,8 @@ pub struct LogLine {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Pane {
+    /// Lista de execuções da sessão (histórico).
+    Runs,
     Hosts,
     Ports,
 }
@@ -121,6 +128,10 @@ pub enum Hit {
     Row(usize),
     Profile(usize),
     Finding(usize),
+    HelpSection(usize),
+    /// Linha do histórico de execuções (Resultados).
+    Exec(usize),
+    EditCmd,
     Host(usize),
     Port(usize),
     Run,
@@ -152,13 +163,13 @@ pub struct App {
     pub values: Values,
     pub tab: Tab,
     pub sub: usize,
-    cursors: [usize; 12],
-    pub list_offset: [usize; 12],
+    cursors: [usize; 13],
+    pub list_offset: [usize; 13],
     pub detail_scroll: usize,
     pub pieces_scroll: usize,
     pub edit: Option<Edit>,
+    pub cmd_edit: Option<CmdEdit>,
     pub search: Option<Search>,
-    pub confirm: Option<Confirm>,
     pub flash: Option<Flash>,
     pub quit: bool,
     pub copy_request: Option<String>,
@@ -175,7 +186,15 @@ pub struct App {
     run_elapsed: Duration,
     pub started_at: Instant,
     // resultados
+    /// Resultado em exibição (o da execução escolhida no histórico).
     pub result: Option<ScanResult>,
+    /// Execuções desta sessão, em memória até o usuário salvar (s em Resultados).
+    pub history: Vec<Execution>,
+    pub hist_i: usize,
+    /// Pasta onde o terminal foi aberto: relatórios e históricos são salvos aqui.
+    pub save_dir: PathBuf,
+    run_when: String,
+    run_outputs: Vec<PathBuf>,
     pub pane: Pane,
     pub host_i: usize,
     pub port_i: usize,
@@ -184,6 +203,7 @@ pub struct App {
 
 const KEY_PROFILES: usize = 10;
 const KEY_FINDINGS: usize = 11;
+const KEY_HELP: usize = 12;
 
 fn classify(text: &str, is_err: bool) -> LogKind {
     let t = text.trim_start();
@@ -213,6 +233,21 @@ fn classify(text: &str, is_err: bool) -> LogKind {
     }
 }
 
+/// Arquivos que o nmap vai gravar por pedido do usuário (-oN/-oX/-oG/-oS/-oA).
+fn output_files(v: &Values) -> Vec<PathBuf> {
+    let mut out: Vec<PathBuf> = ["oN", "oX", "oG", "oS"]
+        .iter()
+        .map(|id| v.text(id))
+        .filter(|p| !p.is_empty() && *p != "-")
+        .map(PathBuf::from)
+        .collect();
+    let base = v.text("oA");
+    if !base.is_empty() {
+        out.extend(["nmap", "xml", "gnmap"].map(|e| PathBuf::from(format!("{base}.{e}"))));
+    }
+    out
+}
+
 impl App {
     pub fn new(env: Env) -> App {
         App {
@@ -221,13 +256,13 @@ impl App {
             values: Values::default(),
             tab: Tab::Alvo,
             sub: 0,
-            cursors: [0; 12],
-            list_offset: [0; 12],
+            cursors: [0; 13],
+            list_offset: [0; 13],
             detail_scroll: 0,
             pieces_scroll: 0,
             edit: None,
+            cmd_edit: None,
             search: None,
-            confirm: None,
             flash: None,
             quit: false,
             copy_request: None,
@@ -242,6 +277,11 @@ impl App {
             run_elapsed: Duration::ZERO,
             started_at: Instant::now(),
             result: None,
+            history: Vec::new(),
+            hist_i: 0,
+            save_dir: std::env::current_dir().unwrap_or_else(|_| ".".into()),
+            run_when: String::new(),
+            run_outputs: Vec::new(),
             pane: Pane::Hosts,
             host_i: 0,
             port_i: 0,
@@ -273,6 +313,7 @@ impl App {
             Tab::Alvo => 0,
             Tab::Configurar => 1 + self.sub,
             Tab::Perfis => KEY_PROFILES,
+            Tab::Ajuda => KEY_HELP,
             _ => KEY_FINDINGS,
         }
     }
@@ -369,6 +410,7 @@ impl App {
     pub fn set_tab(&mut self, t: Tab) {
         self.tab = t;
         self.edit = None;
+        self.cmd_edit = None;
         self.detail_scroll = 0;
     }
     fn next_tab(&mut self, d: isize) {
@@ -408,6 +450,10 @@ impl App {
                 let max = self.log.len();
                 self.log_back = (self.log_back as isize - d).clamp(0, max as isize) as usize;
             }
+            Tab::Resultados if self.pane == Pane::Runs => {
+                let n = (self.hist_i as isize + d).max(0) as usize;
+                self.select_run(n);
+            }
             Tab::Resultados => {
                 if self.pane == Pane::Hosts {
                     let len = self.result.as_ref().map_or(0, |r| r.hosts.len());
@@ -423,7 +469,11 @@ impl App {
                 }
                 self.detail_scroll = 0;
             }
-            Tab::Ajuda => self.detail_scroll = (self.detail_scroll as isize + d).max(0) as usize,
+            Tab::Editar => self.detail_scroll = (self.detail_scroll as isize + d).max(0) as usize,
+            Tab::Ajuda => {
+                let n = i18n::help().len() as isize;
+                self.set_cursor((self.cursor() as isize + d).clamp(0, n - 1) as usize);
+            }
         }
     }
 
@@ -526,7 +576,7 @@ impl App {
         self.say(
             Lvl::Ok,
             format!(
-                "Perfil \"{}\" aplicado. Ajuste em Configurar (3) ou veja o comando (4).",
+                "Perfil \"{}\" aplicado. Ajuste em Configurar (3) ou revise em Comando (4).",
                 p.name
             ),
         );
@@ -554,15 +604,7 @@ impl App {
         if self.env.nmap.is_err() {
             return self.say(Lvl::Err, i18n::MSG_NO_NMAP);
         }
-        let ext = analyze::external_targets(&self.values);
-        if ext.is_empty() {
-            self.start_run();
-        } else {
-            self.confirm = Some(Confirm {
-                targets: ext,
-                yes: false,
-            });
-        }
+        self.start_run();
     }
 
     fn start_run(&mut self) {
@@ -575,6 +617,8 @@ impl App {
         self.run_progress = None;
         self.run_command = self.command_text();
         self.run_standalone = plan.standalone;
+        self.run_when = crate::util::timestamp();
+        self.run_outputs = output_files(&self.values);
         self.started_at = Instant::now();
         self.set_tab(Tab::Execucao);
         match Runner::start(&self.env.program, &plan) {
@@ -616,46 +660,86 @@ impl App {
         };
         self.run_elapsed = r.elapsed();
         self.run_progress = r.progress.take();
-        match r.outcome.take() {
+        let mut result = None;
+        let status = match r.outcome.take() {
             Some(Outcome::Cancelled) => {
                 self.push_log("^C  Scan interrompido pelo usuário.", true);
                 self.run_state = RunState::Cancelled;
                 self.say(Lvl::Warn, "Scan cancelado.");
+                "cancelado".to_string()
             }
             Some(Outcome::Failed(e)) => {
                 self.push_log(&e, true);
                 self.run_state = RunState::Failed(e.clone());
-                self.say(Lvl::Err, e);
+                self.say(Lvl::Err, e.clone());
+                format!("falhou: {e}")
             }
             Some(Outcome::Finished { code }) => {
                 self.run_state = RunState::Done;
+                let ok = code == Some(0);
+                let code_txt = code.map_or("?".into(), |c| c.to_string());
                 match r.result.take() {
-                    Some(Ok(res)) => {
-                        self.host_i = 0;
-                        self.port_i = 0;
-                        self.pane = Pane::Hosts;
-                        self.result = Some(res);
-                        let ok = code == Some(0);
-                        self.say(if ok { Lvl::Ok } else { Lvl::Warn }, if ok { "Concluído. Veja os Resultados (6).".to_string() } else { format!("O nmap terminou com código {}; os resultados parciais estão em Resultados (6).", code.map_or("?".into(), |c| c.to_string())) });
+                    Some(Ok(mut res)) => {
+                        // o XML traz os argumentos internos (-oX temporário, --stats-every):
+                        // mostra e salva o comando como o usuário o montou
+                        res.command = self.run_command.clone();
+                        result = Some(res);
+                        self.say(
+                            if ok { Lvl::Ok } else { Lvl::Warn },
+                            if ok {
+                                "Concluído. Veja os Resultados (7).".to_string()
+                            } else {
+                                format!("O nmap terminou com código {code_txt}; os resultados parciais estão em Resultados (7).")
+                            },
+                        );
                     }
                     Some(Err(e)) => {
                         self.push_log(&e, true);
                         self.say(Lvl::Err, e);
                     }
                     None => self.say(
-                        if code == Some(0) { Lvl::Ok } else { Lvl::Warn },
-                        if code == Some(0) {
+                        if ok { Lvl::Ok } else { Lvl::Warn },
+                        if ok {
                             "Concluído.".to_string()
                         } else {
-                            format!(
-                                "O nmap terminou com código {}.",
-                                code.map_or("?".into(), |c| c.to_string())
-                            )
+                            format!("O nmap terminou com código {code_txt}.")
                         },
                     ),
                 }
+                if ok {
+                    "concluído".to_string()
+                } else {
+                    format!("terminou com código {code_txt}")
+                }
             }
-            None => {}
+            None => return,
+        };
+        for p in std::mem::take(&mut self.run_outputs) {
+            if p.exists() {
+                crate::util::give_back(&p);
+            }
+        }
+        self.history.push(Execution {
+            when: std::mem::take(&mut self.run_when),
+            command: self.run_command.clone(),
+            status,
+            secs: self.run_elapsed.as_secs(),
+            result,
+            xml: r.xml.take(),
+            log: self.log.iter().map(|l| l.text.clone()).collect(),
+        });
+        self.select_run(self.history.len() - 1);
+    }
+
+    /// Mostra em Resultados a execução `i` do histórico.
+    pub fn select_run(&mut self, i: usize) {
+        self.hist_i = i.min(self.history.len().saturating_sub(1));
+        self.result = self.history.get(self.hist_i).and_then(|e| e.result.clone());
+        self.host_i = 0;
+        self.port_i = 0;
+        self.detail_scroll = 0;
+        if self.pane == Pane::Ports {
+            self.pane = Pane::Hosts;
         }
     }
 
@@ -682,15 +766,22 @@ impl App {
     }
 
     fn save_report(&mut self) {
-        let Some(res) = &self.result else {
-            return self.say(Lvl::Warn, "Não há resultados para salvar.");
-        };
-        let dir = std::env::current_dir().unwrap_or_else(|_| ".".into());
-        match report::save(res, &dir) {
-            Ok(p) => self.say(Lvl::Ok, format!("Relatório salvo em {}", p.display())),
+        if self.history.is_empty() {
+            return self.say(Lvl::Warn, "Ainda não há execuções para salvar.");
+        }
+        let n = self.history.len();
+        match report::save_history(&self.history, &self.save_dir, &crate::util::timestamp()) {
+            Ok(p) => self.say(
+                Lvl::Ok,
+                format!(
+                    "Histórico salvo ({n} {}) em {}",
+                    if n == 1 { "execução" } else { "execuções" },
+                    p.display()
+                ),
+            ),
             Err(e) => self.say(
                 Lvl::Err,
-                format!("Não foi possível salvar o relatório: {e}"),
+                format!("Não foi possível salvar o histórico: {e}"),
             ),
         }
     }
@@ -705,7 +796,16 @@ impl App {
 
     /// Carrega um XML já existente (nscope --open).
     pub fn open_result(&mut self, r: ScanResult) {
-        self.result = Some(r);
+        self.history.push(Execution {
+            when: crate::util::timestamp(),
+            command: r.command.clone(),
+            status: "aberto de um arquivo XML".into(),
+            secs: r.duration_secs.unwrap_or(0.0) as u64,
+            result: Some(r),
+            xml: None,
+            log: Vec::new(),
+        });
+        self.select_run(self.history.len() - 1);
         self.set_tab(Tab::Resultados);
     }
 
@@ -715,11 +815,14 @@ impl App {
         if k.kind == KeyEventKind::Release {
             return;
         }
+        // Vários terminais (ex.: o padrão do Kali) mandam ^H no Backspace; o crossterm entrega Ctrl+H.
+        let k = if k.code == KeyCode::Char('h') && k.modifiers == KeyModifiers::CONTROL {
+            KeyEvent::new(KeyCode::Backspace, KeyModifiers::NONE)
+        } else {
+            k
+        };
         if k.modifiers.contains(KeyModifiers::CONTROL) && k.code == KeyCode::Char('c') {
             return self.quit_now();
-        }
-        if self.confirm.is_some() {
-            return self.confirm_key(k);
         }
         if self.search.is_some() {
             return self.search_key(k);
@@ -727,12 +830,15 @@ impl App {
         if self.edit.is_some() {
             return self.edit_key(k);
         }
+        if self.cmd_edit.is_some() {
+            return self.cmd_edit_key(k);
+        }
         let shift = k.modifiers.contains(KeyModifiers::SHIFT);
         match k.code {
             KeyCode::Char('q') => return self.quit_now(),
             KeyCode::Tab => return self.next_tab(1),
             KeyCode::BackTab => return self.next_tab(-1),
-            KeyCode::Char(c @ '1'..='7') => {
+            KeyCode::Char(c @ '1'..='8') => {
                 return self.set_tab(Tab::ALL[c as usize - '1' as usize]);
             }
             KeyCode::Char('/') => {
@@ -781,13 +887,26 @@ impl App {
                 self.clear_selected()
             }
             (Tab::Perfis, KeyCode::Enter | KeyCode::Char(' ')) => self.apply_profile(self.cursor()),
+            (Tab::Editar, KeyCode::Enter | KeyCode::Char('e')) => self.start_cmd_edit(),
             (Tab::Comando, KeyCode::Enter | KeyCode::Char('g')) => {
                 if let Some(id) = self.findings().get(self.cursor()).and_then(|f| f.opt) {
                     self.goto_opt(id);
                 }
             }
-            (Tab::Resultados, KeyCode::Right | KeyCode::Char('l' | ']')) => self.pane = Pane::Ports,
-            (Tab::Resultados, KeyCode::Left | KeyCode::Char('h' | '[')) => self.pane = Pane::Hosts,
+            (Tab::Resultados, KeyCode::Right | KeyCode::Char('l' | ']')) => {
+                self.pane = if self.pane == Pane::Runs {
+                    Pane::Hosts
+                } else {
+                    Pane::Ports
+                }
+            }
+            (Tab::Resultados, KeyCode::Left | KeyCode::Char('h' | '[')) => {
+                self.pane = if self.pane == Pane::Ports || self.history.is_empty() {
+                    Pane::Hosts
+                } else {
+                    Pane::Runs
+                }
+            }
             _ => {}
         }
     }
@@ -805,6 +924,59 @@ impl App {
                 if e.input.handle(k) {
                     let (id, v) = (e.id, e.input.value().to_string());
                     self.values.set(id, v); // o comando atualiza enquanto digita
+                }
+            }
+        }
+    }
+
+    /// Abre o comando atual para edição livre (aba Editar).
+    pub fn start_cmd_edit(&mut self) {
+        self.cmd_edit = Some(CmdEdit {
+            input: TextInput::new(&self.command_text()),
+            original: self.values.clone(),
+            error: None,
+        });
+    }
+
+    fn cmd_edit_key(&mut self, k: KeyEvent) {
+        let Some(e) = self.cmd_edit.as_mut() else {
+            return;
+        };
+        match k.code {
+            KeyCode::Esc => {
+                self.values = e.original.clone();
+                self.cmd_edit = None;
+                self.say(
+                    Lvl::Warn,
+                    "Edição desfeita: o comando voltou ao que era antes.",
+                );
+            }
+            KeyCode::Enter if e.error.is_some() => {
+                self.say(
+                    Lvl::Err,
+                    "Corrija o comando (veja o problema acima) ou use Esc para desfazer.",
+                );
+            }
+            KeyCode::Enter => {
+                self.cmd_edit = None;
+                self.say(
+                    Lvl::Ok,
+                    "Comando aplicado. Todas as abas já mostram as novas opções.",
+                );
+            }
+            KeyCode::Up => self.scroll_detail(-1),
+            KeyCode::Down => self.scroll_detail(1),
+            KeyCode::PageUp => self.scroll_detail(-8),
+            KeyCode::PageDown => self.scroll_detail(8),
+            _ => {
+                if e.input.handle(k) {
+                    match command::parse(e.input.value()) {
+                        Ok(v) => {
+                            e.error = None;
+                            self.values = v; // o resto da ferramenta acompanha enquanto digita
+                        }
+                        Err(m) => e.error = Some(m),
+                    }
                 }
             }
         }
@@ -835,39 +1007,10 @@ impl App {
         }
     }
 
-    fn confirm_key(&mut self, k: KeyEvent) {
-        let Some(c) = self.confirm.as_mut() else {
-            return;
-        };
-        match k.code {
-            KeyCode::Left
-            | KeyCode::Right
-            | KeyCode::Tab
-            | KeyCode::BackTab
-            | KeyCode::Char('h' | 'l') => c.yes = !c.yes,
-            KeyCode::Char('s' | 'S') => c.yes = true,
-            KeyCode::Esc | KeyCode::Char('n' | 'N') => self.confirm = None,
-            KeyCode::Enter => {
-                let yes = c.yes;
-                self.confirm = None;
-                if yes {
-                    self.start_run();
-                } else {
-                    self.say(
-                        Lvl::Warn,
-                        "Execução cancelada: sem confirmação de autorização.",
-                    );
-                }
-            }
-            _ => {}
-        }
-        // 's' só marca "Sim"; é preciso Enter para executar (evita disparo acidental)
-    }
-
     // ---------- mouse ----------
 
     pub fn on_mouse(&mut self, m: MouseEvent) {
-        if self.confirm.is_some() || self.search.is_some() || self.edit.is_some() {
+        if self.search.is_some() || self.edit.is_some() || self.cmd_edit.is_some() {
             return;
         }
         match m.kind {
@@ -886,7 +1029,9 @@ impl App {
                     })
                     .map(|(_, h)| *h);
                 match hit {
-                    Some(Hit::Tab(i)) => self.set_tab(Tab::ALL[i.min(6)]),
+                    Some(Hit::Tab(i)) => self.set_tab(Tab::ALL[i.min(Tab::ALL.len() - 1)]),
+                    Some(Hit::HelpSection(i)) => self.set_cursor(i),
+                    Some(Hit::EditCmd) => self.start_cmd_edit(),
                     Some(Hit::Sub(i)) => {
                         self.sub = i.min(Section::CONFIG.len() - 1);
                         self.detail_scroll = 0;
@@ -905,6 +1050,10 @@ impl App {
                         }
                     }
                     Some(Hit::Finding(i)) => self.set_cursor(i),
+                    Some(Hit::Exec(i)) => {
+                        self.pane = Pane::Runs;
+                        self.select_run(i);
+                    }
                     Some(Hit::Host(i)) => {
                         self.pane = Pane::Hosts;
                         self.host_i = i;
@@ -957,7 +1106,7 @@ mod tests {
         assert_eq!(a.tab, Tab::Perfis);
         a.on_key(KeyEvent::new(KeyCode::BackTab, KeyModifiers::SHIFT));
         assert_eq!(a.tab, Tab::Alvo);
-        key(&mut a, KeyCode::Char('5'));
+        key(&mut a, KeyCode::Char('6'));
         assert_eq!(a.tab, Tab::Execucao);
         key(&mut a, KeyCode::Char('?'));
         assert_eq!(a.tab, Tab::Ajuda);
@@ -1030,6 +1179,17 @@ mod tests {
         }
         key(&mut a, KeyCode::Enter);
         assert_eq!(a.command_text(), "nmap -F -T4 192.0.2.7");
+        assert_eq!(
+            profiles::active(&a.values),
+            Some(3),
+            "o perfil aplicado fica marcado"
+        );
+        a.values.set("sV", "1");
+        assert_eq!(
+            profiles::active(&a.values),
+            None,
+            "mudou uma opção: sai a marca"
+        );
     }
 
     #[test]
@@ -1105,21 +1265,7 @@ mod tests {
         a.env.nmap = Err("nmap não encontrado".into());
         key(&mut a, KeyCode::Char('r'));
         assert!(a.flash_active().unwrap().msg.contains("não está instalado"));
-        assert!(!a.is_running() && a.confirm.is_none());
-    }
-
-    #[test]
-    fn alvo_externo_pede_confirmacao_com_padrao_nao() {
-        let mut a = app();
-        a.values.set("targets", "8.8.8.8");
-        key(&mut a, KeyCode::Char('r'));
-        let c = a.confirm.as_ref().unwrap();
-        assert!(!c.yes && c.targets == ["8.8.8.8"]);
-        key(&mut a, KeyCode::Enter); // padrão: Não
-        assert!(a.confirm.is_none() && !a.is_running() && a.run_state == RunState::Idle);
-        key(&mut a, KeyCode::Char('r'));
-        key(&mut a, KeyCode::Esc);
-        assert!(a.confirm.is_none() && !a.is_running());
+        assert!(!a.is_running());
     }
 
     #[test]
@@ -1140,6 +1286,47 @@ mod tests {
         let mut b = app();
         key(&mut b, KeyCode::Char('q'));
         assert!(b.quit);
+    }
+
+    #[test]
+    fn backspace_que_chega_como_ctrl_h_apaga_a_letra() {
+        let mut a = app();
+        key(&mut a, KeyCode::Enter); // editar alvos
+        typ(&mut a, "xy");
+        a.on_key(KeyEvent::new(KeyCode::Char('h'), KeyModifiers::CONTROL));
+        assert!(a.values.text("targets").ends_with('x'));
+        key(&mut a, KeyCode::Enter);
+        a.set_tab(Tab::Configurar);
+        a.on_key(KeyEvent::new(KeyCode::Char('h'), KeyModifiers::CONTROL));
+        assert_eq!(
+            a.sub, 0,
+            "não pode trocar de sub-aba como se fosse a tecla h"
+        );
+    }
+
+    #[test]
+    fn editar_o_comando_inteiro_atualiza_as_opcoes_e_esc_desfaz() {
+        let mut a = app();
+        key(&mut a, KeyCode::Char('5'));
+        assert_eq!(a.tab, Tab::Editar);
+        key(&mut a, KeyCode::Enter);
+        assert_eq!(
+            a.cmd_edit.as_ref().unwrap().input.value(),
+            "nmap scanme.nmap.org"
+        );
+        typ(&mut a, " -sV -p 22");
+        assert!(a.values.flag("sV") && a.command_text().contains("-p 22"));
+        typ(&mut a, ";");
+        assert!(a.cmd_edit.as_ref().unwrap().error.is_some());
+        key(&mut a, KeyCode::Enter); // com erro, continua editando
+        assert!(a.cmd_edit.is_some());
+        key(&mut a, KeyCode::Backspace);
+        key(&mut a, KeyCode::Enter);
+        assert!(a.cmd_edit.is_none() && a.values.flag("sV"));
+        key(&mut a, KeyCode::Enter);
+        typ(&mut a, " -O");
+        key(&mut a, KeyCode::Esc);
+        assert_eq!(a.command_text(), "nmap -p 22 -sV scanme.nmap.org");
     }
 
     #[test]

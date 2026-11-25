@@ -3,15 +3,14 @@ source: src/ui/mod.rs
 expression: out
 ---
  nscope · TUI do nmap · nmap 7.95                                                            Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
+ 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Editar  6 Execução  7 Resultados  8 Ajuda
 ┌ Andamento ───────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│● Executando… pressione c para cancelar.                                                                              │
-│                                                                                                                      │
-│[█████████████████░░░░░░░░░░░░░░░░░░░░░░░]  42%  00:00  restam 0:00:12                                                │
-│$ nmap -sV scanme.nmap.org                                                                                            │
-│                                                                                                                      │
+│Situação   ● Executando. Pressione c para cancelar.                                                                   │
+│Progresso  [█████████████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░░░]  42%  00:00 · restam 0:00:12                          │
+│Comando    $ nmap -sV scanme.nmap.org                                                                                 │
+│            ▶ Executar (r)    ■ Cancelar (c)                                                                          │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
-┌ Saída do nmap ───────────────────────────────────────────────────────────────────────────────────────────────────────┐
+┌ Saída do nmap · 4 linhas · 1 porta aberta ───────────────────────────────────────────────────────────────────────────┐
 │Starting Nmap 7.95 ( https://nmap.org )                                                                               │
 │Discovered open port 22/tcp on 192.0.2.10                                                                             │
 │Warning: osscan results may be unreliable                                                                             │
@@ -38,7 +37,8 @@ expression: out
 │                                                                                                                      │
 │                                                                                                                      │
 │                                                                                                                      │
+│                                                                                                                      │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
  Comando final ─────────────────────────────────────────────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
 $ nmap -sV -oA relatorio scanme.nmap.org
- r executar  c cancelar  ↑↓ rolar  Tab abas  / buscar  r executar  y copiar  ? ajuda  q sair
+ r executar  c cancelar  ↑↓ rolar  End fim  Tab abas  / buscar  y copiar  ? ajuda  q sair

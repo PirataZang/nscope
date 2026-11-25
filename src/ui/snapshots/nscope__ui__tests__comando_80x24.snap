@@ -3,26 +3,26 @@ source: src/ui/mod.rs
 expression: out
 ---
  nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
- 1 Alvo  2 Perfis  3 Configurar  4 Comando  5 Execução  6 Resultados  7 Ajuda
-┌ Comando final ───────────────────────────────────────────────────────────────┐
-│$ nmap -sV -oA relatorio scanme.nmap.org                                      │
-│Em palavras simples: Vai examinar scanme.nmap.org, usando a técnica padrão    │
-│(SYN com administrador, conexão completa sem). Testa as 1000 portas mais      │
-│comuns. Identifica o serviço e a versão de cada porta aberta. Salva o         │
-│resultado em: -oA relatorio.                                                  │
-│Visibilidade estimada (didática): ███░░ alta (1000 portas, detecção de versão)│
-│                                                                              │
+ 1 Alvo 2 Perfis 3 Config 4 Comando 5 Editar 6 Execução 7 Resultados 8 Ajuda
+┌ Resumo ──────────────────────────────────────────────────────────────────────┐
+│Comando       $ nmap -sV -oA relatorio scanme.nmap.org                        │
+│Na prática    Vai examinar scanme.nmap.org, usando a técnica padrão (SYN com  │
+│              administrador, conexão completa sem). Testa as 1000 portas mais │
+│              comuns. Identifica o serviço e a versão de cada porta aberta.   │
+│              Salva o resultado em: -oA relatorio.                            │
+│Visibilidade  ███░░ alta · 1000 portas, detecção de versão                    │
+│Situação      ✔ Pronto para executar (r).                                     │
 └──────────────────────────────────────────────────────────────────────────────┘
-┌ Cada pedaço do comando ────────────────┐┌ Avisos e problemas (0) ────────────┐
-│nmap  o programa que faz o scan         ││✔ Nenhum problema encontrado. O     │
-│-sV  Além de saber que a porta está     ││comando está pronto para executar   │
-│aberta, pergunta ao serviço quem ele é: ││(r).                                │
-│"nginx 1.18" em vez de só "http".       ││                                    │
-│Essencial para achar software           ││                                    │
-│desatualizado.                          ││                                    │
-│-oA relatorio  Salva em texto, XML e    ││                                    │
-│grepável de uma vez, usando o nome-base ││                                    │
-└────────────────────────────────────────┘└────────────────────────────────────┘
+┌ Cada pedaço do comando ──────────────────┐┌ Avisos e problemas ──────────────┐
+│nmap             o programa que faz o scan││✔ Nenhum problema encontrado. O   │
+│-sV              Além de saber que a porta││comando está pronto para executar │
+│                 está aberta, pergunta ao ││(r).                              │
+│                 serviço quem ele é:      ││                                  │
+│                 "nginx 1.18" em vez de só││                                  │
+│                 "http". Essencial para   ││                                  │
+│                 achar software           ││                                  │
+│                 desatualizado.           ││                                  │
+└──────────────────────────────────────────┘└──────────────────────────────────┘
  Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
 $ nmap -sV -oA relatorio scanme.nmap.org
- ↑↓ avisos  Enter ir à opção  y copiar  Tab abas  / buscar  r executar
+ ↑↓ avisos  Enter ir à opção  PgUp/PgDn rolar pedaços  Tab abas  / buscar

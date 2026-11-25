@@ -1,0 +1,28 @@
+---
+source: src/ui/mod.rs
+expression: out
+---
+ nscope · TUI do nmap · nmap 7.95                    Privilégios: usuário comum
+ 1 Alvo 2 Perfis 3 Config 4 Comando 5 Editar 6 Execução 7 Resultados 8 Ajuda
+┌ Comando ─────────────────────────────────────────────────────────────────────┐
+│$ nmap -sV -oA relatorio scanme.nmap.org                                      │
+│                                                                              │
+│ Enter  editar este comando: apague (Ctrl+U), digite ou cole outro            │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌ O que este comando faz (↑↓ rola) ────────────────────────────────────────────┐
+│CADA PARTE DO COMANDO                                                         │
+│nmap             o programa que faz o scan                                    │
+│-sV              Além de saber que a porta está aberta, pergunta ao serviço   │
+│                 quem ele é: "nginx 1.18" em vez de só "http". Essencial para │
+│                 achar software desatualizado.                                │
+│-oA relatorio    Salva em texto, XML e grepável de uma vez, usando o nome-base│
+│                 informado (cria .nmap, .xml e .gnmap).                       │
+│scanme.nmap.org  Alvo: o endereço, nome ou rede que será examinado.           │
+│                                                                              │
+│RESUMO                                                                        │
+│Na prática    Vai examinar scanme.nmap.org, usando a técnica padrão (SYN com  │
+│              administrador, conexão completa sem). Testa as 1000 portas mais │
+└──────────────────────────────────────────────────────────────────────────────┘
+ Comando final ─────────────────────────────────── Copiar (y) ─ ▶ Executar (r) ─
+$ nmap -sV -oA relatorio scanme.nmap.org
+ Enter editar comando  ↑↓ rolar  Tab abas  / buscar  r executar  y copiar

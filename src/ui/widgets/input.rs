@@ -20,6 +20,10 @@ impl TextInput {
     pub fn value(&self) -> &str {
         &self.value
     }
+    /// Posição do cursor, em caracteres.
+    pub fn cursor(&self) -> usize {
+        self.cursor
+    }
     fn byte(&self, ci: usize) -> usize {
         self.value
             .char_indices()

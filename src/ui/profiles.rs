@@ -29,6 +29,7 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
     );
     app.list_offset[key] = off;
     let w = i.width as usize;
+    let active = profiles::active(&app.values);
     let mut lines = Vec::new();
     for (n, p) in PROFILES
         .iter()
@@ -45,17 +46,29 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
             },
             Hit::Profile(n),
         ));
-        let left = format!("{}{}", if p.recommended { "★ " } else { "  " }, p.name);
+        let on = active == Some(n);
+        let mark = if n == 0 {
+            "    "
+        } else if on {
+            "[x] "
+        } else {
+            "[ ] "
+        };
+        let star = if p.recommended { "★ " } else { "" };
+        let left = format!("{mark}{star}{}", p.name);
         let right = noise::meter(p.noise);
+        let left = truncate(&left, w.saturating_sub(right.width() + 2));
         let pad = w.saturating_sub(left.width() + right.width() + 1);
-        let txt = format!(
-            "{}{} {right}",
-            truncate(&left, w.saturating_sub(7)),
-            " ".repeat(pad)
-        );
+        let txt = format!("{left}{} {right}", " ".repeat(pad));
         lines.push(Line::styled(
             txt,
-            if n == cur { t.selected() } else { t.normal() },
+            if n == cur {
+                t.selected()
+            } else if on {
+                t.ok()
+            } else {
+                t.normal()
+            },
         ));
     }
     f.render_widget(Paragraph::new(lines), i);
@@ -131,10 +144,17 @@ pub fn draw(f: &mut Frame, app: &mut App, area: Rect) {
         out.push(Line::styled(format!("  {}", k.explain), t.dim()));
     }
     out.push(Line::raw(""));
-    out.push(Line::styled(
-        "Enter aplica (mantém os alvos e restaura o resto ao padrão).",
-        t.accent(),
-    ));
+    out.push(if active == Some(cur) {
+        Line::styled(
+            "✔ Este é o perfil em uso. Mudar qualquer opção depois tira a marca [x].",
+            t.ok(),
+        )
+    } else {
+        Line::styled(
+            "Enter aplica (mantém os alvos e restaura o resto ao padrão).",
+            t.accent(),
+        )
+    });
     let max = out.len().saturating_sub(1);
     app.detail_scroll = app.detail_scroll.min(max);
     f.render_widget(

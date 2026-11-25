@@ -24,7 +24,7 @@ A superfície de ataque é o texto que entra (do usuário) e o texto que volta (
 | Arquivos temporários previsíveis ou legíveis por outros | Diretório 0700 com nome PID+nanossegundos, criado sem sobrescrever; removido ao terminar, cancelar, sair, falhar ou em pânico (`Drop`). |
 | XML hostil (bomba de entidades, arquivo gigante) | `roxmltree` com limites de expansão padrão; arquivos acima de 64 MiB são recusados sem serem lidos; limites de hosts/portas exibidos. |
 | Saída infinita do processo | Linhas lidas com limite de 8 KiB; só 5000 linhas ficam em memória; canal limitado. |
-| Escanear sem querer o que não é seu | Aviso antes de executar e janela de confirmação explícita (padrão **Não**) para alvos fora de redes privadas/loopback/documentação/`scanme.nmap.org`. |
+| Escanear sem querer o que não é seu | Avisos antes de executar e um aviso na aba Alvo para alvos fora de redes privadas/loopback/documentação/`scanme.nmap.org`. Não há janela de confirmação. |
 | Escalada de privilégio | O nscope nunca se eleva sozinho. Você decide rodar com `sudo`. |
 | Vazamento de dados | Sem telemetria, sem atualização automática, sem conexões de rede próprias. Nada é gravado sem você pedir (relatório com `s`, e só sem sobrescrever). |
 | Cadeia de suprimentos | `Cargo.lock` versionado, `cargo audit` e `cargo deny` no CI, poucas dependências (justificadas no README), ações do CI fixadas por SHA, releases com SBOM CycloneDX, checksums e atestado de build. |
@@ -33,7 +33,7 @@ A superfície de ataque é o texto que entra (do usuário) e o texto que volta (
 
 - **O nmap em si.** Uma vulnerabilidade no nmap ou nos scripts NSE que você executar continua sendo do nmap.
   Scripts das categorias `intrusive`, `brute`, `dos`, `exploit` e `fuzzer` fazem o que dizem; o nscope só avisa.
-- **A autorização legal.** O aviso e a confirmação são lembretes, não verificação. A responsabilidade é de quem executa.
+- **A autorização legal.** O aviso é um lembrete, não verificação. A responsabilidade é de quem executa.
 - **Um sistema já comprometido** (um `nmap` trocado no `PATH`, terminal malicioso etc.).
 - **Encerramento forçado** (`SIGKILL`, queda de energia): o diretório temporário (0700, só com o XML do scan) pode ficar em `$TMPDIR`.
   `SIGTERM` também não é tratado; use `q` ou `Ctrl+C`.
